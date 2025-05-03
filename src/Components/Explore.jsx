@@ -450,9 +450,9 @@
 
 
 import {
+  ArrowBack,
   Bookmark,
   BookmarkBorder,
-  Close,
   Favorite,
   FavoriteBorder,
   LocalFireDepartment,
@@ -469,9 +469,6 @@ import {
   CardMedia,
   Chip,
   Container,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   Divider,
   Grid,
   IconButton,
@@ -508,7 +505,7 @@ const [filteredPosts, setFilteredPosts] = useState({
 
 // State for popup blog view
 const [selectedBlog, setSelectedBlog] = useState(null);
-const [blogPopupOpen, setBlogPopupOpen] = useState(false);
+const [selectedBlogForView, setSelectedBlogForView] = useState(null);
 const [blogLoading, setBlogLoading] = useState(false);
 
 // Fetch posts from backend API
@@ -624,8 +621,7 @@ const handlePostClick = async (postId) => {
   // First check if we already have all the data we need in allPosts
   const existingPost = allPosts.find(post => post.id === postId);
   if (existingPost) {
-    setSelectedBlog(existingPost);
-    setBlogPopupOpen(true);
+    setSelectedBlogForView(existingPost);
     setBlogLoading(false);
     return;
   }
@@ -633,12 +629,9 @@ const handlePostClick = async (postId) => {
   // Otherwise fetch the specific post details
   try {
     const response = await fetch(`https://localhost:7163/api/Post/${postId}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch blog post');
-    }
+    if (!response.ok) throw new Error('Failed to fetch blog post');
     const data = await response.json();
-    setSelectedBlog(data);
-    setBlogPopupOpen(true);
+    setSelectedBlogForView(data);
   } catch (error) {
     console.error('Error fetching blog post:', error);
   } finally {
@@ -646,10 +639,8 @@ const handlePostClick = async (postId) => {
   }
 };
 
-const handleCloseBlogPopup = () => {
-  setBlogPopupOpen(false);
-  // Reset selected blog after animation completes
-  setTimeout(() => setSelectedBlog(null), 300);
+const handleBackToExplore = () => {
+  setSelectedBlogForView(null);
 };
 
 const BlogCard = ({ post, isFeatured = false }) => {
@@ -680,6 +671,9 @@ const BlogCard = ({ post, isFeatured = false }) => {
     }
     return "Read this interesting article...";
   };
+
+
+  
 
   return (
     <Card 
@@ -841,6 +835,41 @@ const formatDate = (dateString) => {
     });
   }
 };
+
+
+if (selectedBlogForView) {
+  return (
+    <Box>
+      <Button 
+        variant="contained" 
+        onClick={handleBackToExplore}
+        startIcon={<ArrowBack />}
+        sx={{ 
+          position: 'fixed',
+          top: theme.spacing(10),
+          right: theme.spacing(0),
+          zIndex: theme.zIndex.modal + 1,
+          px: 4,
+          boxShadow: 3,
+          '&:hover': {
+            boxShadow: 6,
+          },
+          [theme.breakpoints.down('sm')]: {
+            top: theme.spacing(1),
+            right: theme.spacing(1),
+            px: 2,
+            fontSize: '0.875rem'
+          }
+        }}
+      >
+        Back to Explore
+      </Button>
+      <Box sx={{ mt: { xs: 6, sm: 8 } }}>
+        <BlogView blogData={selectedBlogForView} />
+      </Box>
+    </Box>
+  );
+}
 
 return (
   <Container maxWidth="xl" sx={{ py: 8 }}>
@@ -1008,76 +1037,6 @@ return (
       )}
     </Box>
 
-    {/* Blog View Dialog */}
-    {/* <Dialog
-      fullScreen={fullScreen}
-      maxWidth="lg"
-      fullWidth
-      open={blogPopupOpen}
-      onClose={handleCloseBlogPopup}
-      scroll="paper"
-      PaperProps={{
-        sx: {
-          borderRadius: { xs: 0, md: 2 },
-          height: { xs: '100%', md: '90vh' }
-        }
-      }}
-    >
-      <DialogTitle sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <IconButton 
-          edge="end" 
-          color="inherit" 
-          onClick={handleCloseBlogPopup} 
-          aria-label="close"
-        >
-          <Close />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent dividers sx={{ p: 0 }}>
-        {blogLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <Skeleton variant="rectangular" height={400} width="100%" />
-          </Box>
-        ) : (
-          selectedBlog && <BlogView blogData={selectedBlog} />
-        )}
-      </DialogContent>
-    </Dialog> */}
-    <Dialog
-  fullScreen={fullScreen}
-  maxWidth="lg"
-  fullWidth
-  open={blogPopupOpen}
-  onClose={handleCloseBlogPopup}
-  scroll="paper"
-  PaperProps={{
-    sx: {
-      borderRadius: { xs: 0, md: 2 },
-      height: { xs: '100%', md: '90vh' },
-      mt: { xs: 0, md: 12 } // <-- Add margin top for md and above screens
-    }
-  }}
->
-  <DialogTitle sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-    <IconButton 
-      edge="end" 
-      color="inherit" 
-      onClick={handleCloseBlogPopup} 
-      aria-label="close"
-    >
-      <Close />
-    </IconButton>
-  </DialogTitle>
-  <DialogContent dividers sx={{ p: 0 }}>
-    {blogLoading ? (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <Skeleton variant="rectangular" height={500} width="100%" />
-      </Box>
-    ) : (
-      selectedBlog && <BlogView blogData={selectedBlog} />
-    )}
-  </DialogContent>
-</Dialog>
 
   </Container>
 );

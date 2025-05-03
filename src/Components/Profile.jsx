@@ -2170,6 +2170,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BlogView from "./BlogView";
 import Navbar from "./Navbar";
+import ArrowBack from "@mui/icons-material/ArrowBack";
 
 const LogoutButton = styled(Button)(({ theme }) => ({
   background: `linear-gradient(90deg, ${theme.palette.secondary.main}, ${theme.palette.primary.light})`,
@@ -2501,29 +2502,40 @@ const ProfilePage = () => {
 
       {/* Fullscreen Blog View Dialog */}
       <Dialog
-        open={isPreviewOpen}
-        onClose={() => setIsPreviewOpen(false)}
-        fullScreen
-        PaperProps={{ sx: { bgcolor: "background.default" } }}
-      >
-        <Box sx={{ position: "relative" }}>
-          <IconButton
-            onClick={() => setIsPreviewOpen(false)}
-            sx={{
-              position: "fixed",
-              top: 16,
-              right: 16,
-              zIndex: 9999,
-              bgcolor: "background.paper",
-              boxShadow: 3,
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
+  open={isPreviewOpen}
+  onClose={() => setIsPreviewOpen(false)}
+  fullScreen
+  PaperProps={{ sx: { bgcolor: "background.default" } }}
+>
+  <Box sx={{ position: "relative" }}>
+    <Button
+      variant="contained"
+      onClick={() => setIsPreviewOpen(false)}
+      startIcon={<ArrowBack />}
+      sx={{
+        position: "fixed",
+        top: theme.spacing(10),
+        right: theme.spacing(0),
+        zIndex: theme.zIndex.modal + 1,
+        px: 4,
+        boxShadow: 3,
+        '&:hover': {
+          boxShadow: 6,
+        },
+        [theme.breakpoints.down('sm')]: {
+          top: theme.spacing(1),
+          right: theme.spacing(1),
+          px: 2,
+          fontSize: '0.875rem'
+        }
+      }}
+    >
+      Back to Profile
+    </Button>
 
-          {selectedBlog && <BlogView blogData={selectedBlog} />}
-        </Box>
-      </Dialog>
+    {selectedBlog && <BlogView blogData={selectedBlog} />}
+  </Box>
+</Dialog>
 
       {/* Profile Header */}
       <Paper
