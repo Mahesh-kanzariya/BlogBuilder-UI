@@ -7,6 +7,7 @@ import LoginPage from "../Components/Login";
 import BlogsPage from "../Components/MyBlogs";
 import ProfilePage from "../Components/Profile";
 import SignupPage from "../Components/Signup";
+import TermsOfService from "../Components/TermsOfService";
 
 const router = createBrowserRouter([
   {
@@ -15,6 +16,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <LoginPage /> },
       { path:"signup", element: <SignupPage/> },
+      { path:"terms-of-service", element: < TermsOfService/> },
       { path:"home", element: <HomePage /> },
       { path:"profile", element: < ProfilePage/> },
       { path:"create-blog", element: < BlogCreation/> },

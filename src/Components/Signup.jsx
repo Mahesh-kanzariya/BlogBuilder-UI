@@ -1315,25 +1315,25 @@ import PersonIcon from '@mui/icons-material/Person';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    Container,
-    createTheme,
-    CssBaseline,
-    Divider,
-    FormHelperText,
-    IconButton,
-    InputAdornment,
-    LinearProgress,
-    Link,
-    Paper,
-    Snackbar,
-    TextField,
-    ThemeProvider,
-    Typography,
-    useMediaQuery,
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  createTheme,
+  CssBaseline,
+  Divider,
+  FormHelperText,
+  IconButton,
+  InputAdornment,
+  LinearProgress,
+  Link,
+  Paper,
+  Snackbar,
+  TextField,
+  ThemeProvider,
+  Typography,
+  useMediaQuery,
 } from '@mui/material';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
@@ -1657,6 +1657,10 @@ function SignupPage() {
     navigate('/');
   };
 
+const handleTermsOfService = () => {
+  navigate('/terms-of-service');
+};
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -1940,6 +1944,7 @@ function SignupPage() {
               >
                 By signing up, you agree to our{' '}
                 <Link
+                onClick={handleTermsOfService}
                   href="#"
                   sx={{
                     color: 'primary.main',
@@ -1950,6 +1955,7 @@ function SignupPage() {
                 </Link>{' '}
                 and{' '}
                 <Link
+                onClick={handleTermsOfService}
                   href="#"
                   sx={{
                     color: 'primary.main',

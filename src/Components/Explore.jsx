@@ -1175,18 +1175,19 @@ const processPostsForDisplay = (posts) => {
   );
 
   // For demo purposes - assign some posts as trending and featured
-  // In a real application, you might have these attributes from the backend
   const trending = sortedByDate.slice(0, Math.min(4, sortedByDate.length)).map(post => ({
     ...post,
     trending: true
   }));
 
-  const featured = sortedByDate.filter((_, index) => index % 3 === 0).slice(0, 1).map(post => ({
-    ...post,
-    featured: true
-  }));
+  // Get featured post (first post where index % 3 === 0)
+  const featuredPost = sortedByDate.find((_, index) => index % 3 === 0);
+  const featured = featuredPost ? [{ ...featuredPost, featured: true }] : [];
 
-  const latest = sortedByDate.slice(0, 6);
+  // Get latest posts, excluding the featured post if it exists
+  const latest = sortedByDate
+    .filter(post => !featured.length || post.id !== featured[0].id)
+    .slice(0, 6);
 
   setFilteredPosts({
     trending,
@@ -1469,30 +1470,31 @@ const BlogCard = ({ post, isFeatured = false }) => {
             sx={{ borderRadius: '4px', textTransform: 'capitalize' }}
           />
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Tooltip title={likedPosts.has(post.id) ? "Unlike" : "Like"}>
-              <Badge 
-                badgeContent={postLikeCount > 0 ? postLikeCount : null} 
-                color="secondary"
-                overlap="circular"
-                anchorOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-                onClick={(e) => postLikeCount > 0 && handleShowLikeUsers(post.id, e)}
-                sx={{ cursor: postLikeCount > 0 ? 'pointer' : 'default' }}
-              >
-                <IconButton 
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleLikeToggle(post.id);
-                  }}
-                  color={likedPosts.has(post.id) ? 'primary' : 'default'}
-                >
-                  {likedPosts.has(post.id) ? <Favorite /> : <FavoriteBorder />}
-                </IconButton>
-              </Badge>
-            </Tooltip>
+          <Tooltip title={likedPosts.has(post.id) ? "Unlike" : "Like"}>
+  <Badge 
+    badgeContent={postLikeCount > 0 ? postLikeCount : null} 
+    color="error"
+    overlap="circular"
+    anchorOrigin={{
+      vertical: 'top',
+      horizontal: 'right',
+    }}
+    onClick={(e) => postLikeCount > 0 && handleShowLikeUsers(post.id, e)}
+    sx={{ cursor: postLikeCount > 0 ? 'pointer' : 'default' }}
+  >
+    <IconButton 
+      size="small"
+      onClick={(e) => {
+        e.stopPropagation();
+        handleLikeToggle(post.id);
+      }}
+      color={likedPosts.has(post.id) ? 'error' : 'default'} // <-- red when liked
+    >
+      {likedPosts.has(post.id) ? <Favorite /> : <FavoriteBorder />}
+    </IconButton>
+  </Badge>
+</Tooltip>
+
             <IconButton 
               size="small"
               onClick={(e) => {
@@ -1733,24 +1735,37 @@ return (
 
     {/* Active Writers Section */}
     <Box sx={{ mb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6" fontWeight="bold">
-          Active Writers
-        </Typography>
-        <Button color="primary">View All</Button>
-      </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, overflowX: 'auto', pb: 1 }}>
-        <AvatarGroup max={8} sx={{ '& .MuiAvatar-root': { width: 48, height: 48, border: 2 } }}>
-          {allPosts.slice(0, 8).map((post, i) => (
-            <Avatar
-              key={i}
-              src={post.profileImageUrl || `https://images.pexels.com/photos/${220453 + i}/pexels-photo-${220453 + i}.jpeg`}
-              sx={{ cursor: 'pointer' }}
-            />
-          ))}
-        </AvatarGroup>
-      </Box>
-    </Box>
+  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+    <Typography variant="h6" fontWeight="bold">
+      Active Writers
+    </Typography>
+    <Button color="primary">View All</Button>
+  </Box>
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, overflowX: 'auto', pb: 1 }}>
+    <AvatarGroup max={8} sx={{ '& .MuiAvatar-root': { width: 48, height: 48, border: 2 } }}>
+      {Array.from(
+        new Map(
+          allPosts.map(post => [
+            post.profileImageUrl || '', // key
+            post,                       // value
+          ])
+        ).values()
+      )
+        .slice(0, 8)
+        .map((uniquePost, i) => (
+          <Avatar
+            key={i}
+            src={
+              uniquePost.profileImageUrl ||
+              `https://images.pexels.com/photos/${220453 + i}/pexels-photo-${220453 + i}.jpeg`
+            }
+            sx={{ cursor: 'pointer' }}
+          />
+        ))}
+    </AvatarGroup>
+  </Box>
+</Box>
+
 
     {/* Content Tabs */}
     <Box sx={{ mb: 4 }}>

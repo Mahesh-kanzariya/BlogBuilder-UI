@@ -4947,6 +4947,2542 @@
 //===========================================================
 
 
+// import {
+//   DeleteOutline,
+//   Image as ImageIcon,
+//   InfoOutlined,
+//   Publish,
+//   Save,
+//   VisibilityOutlined
+// } from '@mui/icons-material';
+// import {
+//   Alert,
+//   Backdrop,
+//   Box,
+//   Button,
+//   Chip,
+//   CircularProgress,
+//   Container,
+//   Divider,
+//   FormControl,
+//   IconButton,
+//   InputLabel,
+//   MenuItem,
+//   Paper,
+//   Select,
+//   Snackbar,
+//   Tab,
+//   Tabs,
+//   TextField,
+//   Tooltip,
+//   Typography,
+//   useMediaQuery,
+//   useTheme
+// } from '@mui/material';
+// import axios from 'axios';
+// import { AnimatePresence, motion } from 'framer-motion';
+// import React, { useEffect, useState } from 'react';
+// import { categories } from '../Data/blogData';
+// import BlogPreview from './Blog/BlogPreview';
+// import Navbar from './Navbar';
+// import EnhancedTiptapEditor from './TiptapEditor';
+
+
+
+// const BlogCreation = () => {
+//   const theme = useTheme();
+//   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+//   const [activeTab, setActiveTab] = useState(0);
+//   const [isPreview, setIsPreview] = useState(false);
+//   const [isSaving, setIsSaving] = useState(false);
+//   const [isUploading, setIsUploading] = useState(false);
+//   const [uploadStatus, setUploadStatus] = useState('');
+//   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
+//   const [post, setPost] = useState({
+//     title: '',
+//     content: null, // Initialize as null for JSON content
+//     category: '',
+//     tags: [],
+//     coverImage: '',
+//     isDraft: true,
+//     author: {  // Add author field
+//       name: '',
+//       avatar: ''
+//     }
+//   });
+
+//   // Animation variants
+//   const containerVariants = {
+//     hidden: { opacity: 0 },
+//     visible: { 
+//       opacity: 1,
+//       transition: { 
+//         staggerChildren: 0.1,
+//         delayChildren: 0.2
+//       }
+//     }
+//   };
+
+//   const itemVariants = {
+//     hidden: { y: 20, opacity: 0 },
+//     visible: { y: 0, opacity: 1 }
+//   };
+
+//   const handleContentChange = (newContent) => {
+//     // newContent is already a JSON object from Tiptap
+//     setPost((prev) => ({ ...prev, content: newContent }));
+//   };
+
+//   const handleTagInput = (event) => {
+//     if (event.key === 'Enter' && event.target.value.trim()) {
+//       const newTag = event.target.value.trim();
+//       if (!post.tags.includes(newTag) && post.tags.length < 10) {
+//         setPost((prev) => ({
+//           ...prev,
+//           tags: [...prev.tags, newTag],
+//         }));
+        
+//         setNotification({
+//           open: true,
+//           message: `Tag "${newTag}" added!`,
+//           severity: 'success'
+//         });
+//       } else if (post.tags.length >= 10) {
+//         setNotification({
+//           open: true,
+//           message: 'Maximum 10 tags allowed',
+//           severity: 'warning'
+//         });
+//       }
+//       event.target.value = '';
+//     }
+//   };
+
+//   const handleRemoveTag = (tagToRemove) => {
+//     setPost((prev) => ({
+//       ...prev,
+//       tags: prev.tags.filter((tag) => tag !== tagToRemove),
+//     }));
+//   };
+
+//   const uploadToCloudinary = async (file) => {
+//     try {
+//       setIsUploading(true);
+//       setUploadStatus('Uploading...');
+      
+//       const formData = new FormData();
+//       formData.append('file', file);
+//       formData.append('upload_preset', 'my_unsigned');
+      
+//       const response = await axios.post(
+//         'https://api.cloudinary.com/v1_1/dblu8hz5g/image/upload',
+//         formData,
+//         {
+//           headers: {
+//             'Content-Type': 'multipart/form-data'
+//           }
+//         }
+//       );
+      
+//       if (response.data && response.data.secure_url) {
+//         setUploadStatus('Upload complete!');
+//         return response.data.secure_url;
+//       } else {
+//         throw new Error('Upload failed');
+//       }
+//     } catch (error) {
+//       console.error('Error uploading to Cloudinary:', error);
+//       setUploadStatus('Upload failed. Please try again.');
+//       throw error;
+//     } finally {
+//       setIsUploading(false);
+//     }
+//   };
+
+//   const handleCoverImageUpload = async (event) => {
+//     const file = event.target.files[0];
+//     if (file) {
+//       if (file.size > 5000000) {
+//         setNotification({
+//           open: true,
+//           message: 'Image size should be less than 5MB',
+//           severity: 'error'
+//         });
+//         return;
+//       }
+      
+//       try {
+//         const imageUrl = await uploadToCloudinary(file);
+//         setPost((prev) => ({
+//           ...prev,
+//           coverImage: imageUrl,
+//         }));
+        
+//         setNotification({
+//           open: true,
+//           message: 'Cover image uploaded successfully!',
+//           severity: 'success'
+//         });
+//       } catch (error) {
+//         setNotification({
+//           open: true,
+//           message: 'Failed to upload cover image',
+//           severity: 'error'
+//         });
+//       }
+//     }
+//   };
+
+//   const handleRemoveCoverImage = () => {
+//     setPost(prev => ({ ...prev, coverImage: '' }));
+//   };
+
+//   const getUserEmail = () => {
+//     const email = sessionStorage.getItem('userEmail');
+//     if (!email) {
+//       throw new Error('User email not found in session');
+//     }
+//     return email;
+//   };
+
+//   const createBlogPost = async (postData) => {
+//     try {
+//       const response = await axios.post('https://localhost:7163/api/Post', postData, {
+//         headers: {
+//           'Content-Type': 'application/json',
+//         }
+//       });
+//       return response.data;
+//     } catch (error) {
+//       console.error('Error creating blog post:', error);
+//       throw error;
+//     }
+//   };
+
+//   const handleSave = async (isPublished = false) => {
+//     if (!post.title) {
+//       setNotification({
+//         open: true,
+//         message: 'Please add a title to your post',
+//         severity: 'warning'
+//       });
+//       return;
+//     }
+
+//     if (isPublished) {
+//       const missingFields = [];
+//       if (!post.content) missingFields.push('content');
+//       if (!post.category) missingFields.push('category');
+//       if (!post.coverImage) missingFields.push('cover image');
+
+//       if (missingFields.length > 0) {
+//         setNotification({
+//           open: true,
+//           message: `Please fill in all required fields before publishing: ${missingFields.join(', ')}`,
+//           severity: 'error'
+//         });
+//         return;
+//       }
+//     }
+
+//     setIsSaving(true);
+    
+//     try {
+//       const userEmail = getUserEmail();
+      
+//       const postData = {
+//         userEmail: userEmail,
+//         title: post.title,
+//         content: post.content, // This is already a JSON object
+//         coverImageUrl: post.coverImage || null,
+//         category: post.category || null,
+//         tags: post.tags.length > 0 ? post.tags : null,
+//         isPublished: isPublished
+//       };
+
+//       await createBlogPost(postData);
+      
+//       setNotification({
+//         open: true,
+//         message: isPublished 
+//           ? 'Post published successfully!' 
+//           : 'Draft saved successfully!',
+//         severity: 'success'
+//       });
+      
+//       setPost(prev => ({ ...prev, isDraft: !isPublished }));
+
+//     } catch (error) {
+//       console.error('Error saving post:', error);
+      
+//       let errorMessage = 'Failed to save post';
+//       if (error.response) {
+//         if (error.response.data.errors) {
+//           errorMessage = Object.values(error.response.data.errors)
+//             .flat()
+//             .join(', ');
+//         } else if (error.response.data.message) {
+//           errorMessage = error.response.data.message;
+//         }
+//       }
+
+//       setNotification({
+//         open: true,
+//         message: errorMessage,
+//         severity: 'error'
+//       });
+//     } finally {
+//       setIsSaving(false);
+//     }
+//   };
+
+//   const handleSaveDraft = () => {
+//     handleSave(false);
+//   };
+
+//   const handlePublish = () => {
+//     handleSave(true);
+//   };
+
+//   const handleCloseNotification = () => {
+//     setNotification(prev => ({ ...prev, open: false }));
+//   };
+
+//   // Calculate word count from JSON content
+//   const calculateWordCount = (content) => {
+//     if (!content) return 0;
+    
+//     let text = '';
+//     // Recursive function to extract text from JSON content
+//     const extractText = (node) => {
+//       if (node.text) {
+//         text += node.text + ' ';
+//       }
+//       if (node.content) {
+//         node.content.forEach(extractText);
+//       }
+//     };
+    
+//     if (content.content) {
+//       content.content.forEach(extractText);
+//     }
+    
+//     return text.trim() ? text.trim().split(/\s+/).length : 0;
+//   };
+
+//   const wordCount = calculateWordCount(post.content);
+//   const readTime = Math.max(1, Math.ceil(wordCount / 200));
+
+//   // Add useEffect to fetch user data
+//   useEffect(() => {
+//     const fetchUserData = async () => {
+//       try {
+//         const userEmail = getUserEmail();
+//         const userResponse = await axios.get(
+//           `https://localhost:7163/api/User/by-email?email=${encodeURIComponent(userEmail)}`
+//         );
+
+//         setPost(prev => ({
+//           ...prev,
+//           author: {
+//             name: userResponse.data.full_Name || userResponse.data.username || "",
+//             avatar: userResponse.data.profile_Image_Url || ""
+//           }
+//         }));
+//       } catch (error) {
+//         console.error('Error fetching user data:', error);
+//       }
+//     };
+
+//     fetchUserData();
+//   }, []);
+//   return (
+//     <Container maxWidth="xl" sx={{ py: 8 }}>
+//       <Navbar />
+      
+//       <motion.div
+//         initial={{ opacity: 0, y: 20 }}
+//         animate={{ opacity: 1, y: 0 }}
+//         transition={{ duration: 0.5 }}
+//       >
+//         <Paper
+//           elevation={3}
+//           sx={{
+//             p: { xs: 3, md: 4 },
+//             mb: 4,
+//             background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+//             color: 'white',
+//             position: 'relative',
+//             overflow: 'hidden',
+//             borderRadius: 2,
+//             display: 'flex',
+//             flexDirection: { xs: 'column', md: 'row' },
+//             alignItems: 'center',
+//             justifyContent: 'space-between'
+//           }}
+//         >
+//           <Box>
+//             <motion.div
+//               initial={{ scale: 0.95, opacity: 0 }}
+//               animate={{ scale: 1, opacity: 1 }}
+//               transition={{ duration: 0.5 }}
+//             >
+//               <Typography variant="h3" gutterBottom fontWeight="bold">
+//                 Create Your Blog Post
+//               </Typography>
+//               <Typography variant="h6" sx={{ opacity: 0.9 }}>
+//                 Share your thoughts with the world
+//               </Typography>
+//             </motion.div>
+//           </Box>
+          
+//           <motion.div
+//             initial={{ opacity: 0, scale: 0.8 }}
+//             animate={{ opacity: 1, scale: 1 }}
+//             transition={{ delay: 0.3, duration: 0.5 }}
+//           >
+//             <Box sx={{ 
+//               display: 'flex',
+//               gap: 2,
+//               mt: { xs: 2, md: 0 }
+//             }}>
+//               <Tooltip title="Save as draft">
+//                 <Button 
+//                   variant="contained" 
+//                   color="secondary"
+//                   startIcon={<Save />}
+//                   onClick={handleSaveDraft}
+//                   disabled={isSaving || isUploading}
+//                 >
+//                   Save
+//                 </Button>
+//               </Tooltip>
+              
+//               <Tooltip title="Publish your post">
+//                 <Button 
+//                   variant="contained" 
+//                   color="secondary"
+//                   startIcon={<Publish />}
+//                   onClick={handlePublish}
+//                   disabled={isSaving || isUploading}
+//                   sx={{ bgcolor: 'white', color: 'primary.main', '&:hover': { bgcolor: 'grey.100' } }}
+//                 >
+//                   Publish
+//                 </Button>
+//               </Tooltip>
+//             </Box>
+//           </motion.div>
+          
+//           <Box sx={{
+//             position: 'absolute',
+//             width: '300px',
+//             height: '300px',
+//             borderRadius: '50%',
+//             backgroundColor: 'rgba(255,255,255,0.1)',
+//             bottom: '-150px',
+//             right: '-100px',
+//             zIndex: 0
+//           }} />
+//         </Paper>
+//       </motion.div>
+
+//       <Box sx={{ display: 'flex', gap: 3, flexDirection: isMobile ? 'column' : 'row' }}>
+//         <Box 
+//           component={motion.div}
+//           variants={containerVariants}
+//           initial="hidden"
+//           animate="visible"
+//           sx={{ flex: 1 }}
+//         >
+//           <motion.div variants={itemVariants}>
+//             <Paper 
+//               elevation={2} 
+//               sx={{ 
+//                 p: 3, 
+//                 mb: 3,
+//                 borderRadius: 2,
+//                 transition: 'all 0.3s ease-in-out'
+//               }}
+//             >
+//               <TextField
+//                 fullWidth
+//                 label="Blog Title"
+//                 variant="outlined"
+//                 value={post.title}
+//                 onChange={(e) => setPost((prev) => ({ ...prev, title: e.target.value }))}
+//                 placeholder="Enter an attention-grabbing title..."
+//                 InputProps={{
+//                   sx: {
+//                     fontSize: '1.2rem',
+//                     '&:focus': {
+//                       boxShadow: `0 0 0 2px ${theme.palette.primary.main}`,
+//                     }
+//                   }
+//                 }}
+//                 sx={{ 
+//                   mb: 3,
+//                   '& .MuiOutlinedInput-root': {
+//                     transition: 'all 0.3s ease'
+//                   },
+//                   '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+//                     borderColor: theme.palette.primary.light
+//                   }
+//                 }}
+//               />
+
+//               <Box sx={{ mb: 2 }}>
+//                 <Tabs 
+//                   value={isPreview ? 1 : 0} 
+//                   onChange={(_, newValue) => setIsPreview(Boolean(newValue))}
+//                   sx={{ mb: 2 }}
+//                 >
+//                   <Tab label="Editor" />
+//                   <Tab label="Preview" />
+//                 </Tabs>
+//               </Box>
+
+//               <AnimatePresence mode="wait">
+//                 {!isPreview ? (
+//                   <motion.div
+//                     key="editor"
+//                     initial={{ opacity: 0 }}
+//                     animate={{ opacity: 1 }}
+//                     exit={{ opacity: 0 }}
+//                     transition={{ duration: 0.25 }}
+//                   >
+//                     <EnhancedTiptapEditor 
+//                       content={post.content || undefined} // Pass undefined if null to use default empty content
+//                       onChange={handleContentChange} 
+//                     />
+//                   </motion.div>
+//                 ) : (
+//                   <motion.div
+//                     key="preview"
+//                     initial={{ opacity: 0 }}
+//                     animate={{ opacity: 1 }}
+//                     exit={{ opacity: 0 }}
+//                     transition={{ duration: 0.25 }}
+//                   >
+//                     <Paper 
+//                       elevation={1} 
+//                       sx={{ 
+//                         p: 3, 
+//                         minHeight: '400px', 
+//                         borderRadius: 1,
+//                         bgcolor: 'grey.50'
+//                       }}
+//                     >
+//                       <BlogPreview post={post} />
+//                     </Paper>
+//                   </motion.div>
+//                 )}
+//               </AnimatePresence>
+              
+//               <Box sx={{ 
+//                 display: 'flex', 
+//                 justifyContent: 'space-between', 
+//                 alignItems: 'center', 
+//                 mt: 2,
+//                 color: 'text.secondary',
+//                 fontSize: '0.9rem'
+//               }}>
+//                 <Typography variant="body2">
+//                   {wordCount} words · {readTime} min read
+//                 </Typography>
+//                 <Typography variant="body2">
+//                   {post.isDraft ? 'Draft' : 'Ready to publish'}
+//                 </Typography>
+//               </Box>
+//             </Paper>
+//           </motion.div>
+//         </Box>
+
+//                  <Box
+//           component={motion.div}
+//           variants={containerVariants}
+//           initial="hidden"
+//           animate="visible"
+//           sx={{ width: isMobile ? '100%' : '350px' }}
+//         >
+//           <motion.div variants={itemVariants}>
+//             <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+//               <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+//                 <InfoOutlined fontSize="small" />
+//                 Post Settings
+//               </Typography>
+//               <Divider sx={{ mb: 3 }} />
+              
+//               <FormControl fullWidth sx={{ mb: 3 }}>
+//                 <InputLabel>Category</InputLabel>
+//                 <Select
+//                   value={post.category}
+//                   label="Category"
+//                   onChange={(e) => setPost((prev) => ({ ...prev, category: e.target.value }))}
+//                   sx={{
+//                     '& .MuiSelect-select': {
+//                       display: 'flex',
+//                       alignItems: 'center',
+//                       gap: 1
+//                     }
+//                   }}
+//                   MenuProps={{
+//                     PaperProps: {
+//                       sx: {
+//                         maxHeight: 300,
+//                         '& .MuiMenuItem-root': {
+//                           transition: 'background-color 0.2s ease',
+//                           display: 'flex',
+//                           alignItems: 'center',
+//                           gap: 1
+//                         }
+//                       }
+//                     }
+//                   }}
+//                 >
+//                   {categories.map((category) => (
+//                     <MenuItem key={category.value} value={category.value}>
+//                       {category.icon && React.cloneElement(category.icon, { fontSize: 'small' })}
+//                       {category.label}
+//                     </MenuItem>
+//                   ))}
+//                 </Select>
+//               </FormControl>
+
+//               <TextField
+//                 fullWidth
+//                 label="Add Tags"
+//                 placeholder="Press Enter to add tags"
+//                 onKeyDown={handleTagInput}
+//                 helperText={`${post.tags.length}/10 tags added`}
+//                 sx={{ mb: 2 }}
+//                 InputProps={{
+//                   endAdornment: (
+//                     <Tooltip title="Add up to 10 tags to improve discoverability">
+//                       <InfoOutlined color="action" fontSize="small" sx={{ cursor: 'help' }} />
+//                     </Tooltip>
+//                   )
+//                 }}
+//               />
+
+//               <Box sx={{ 
+//                 display: 'flex', 
+//                 flexWrap: 'wrap', 
+//                 gap: 1, 
+//                 mb: 3,
+//                 minHeight: '50px'
+//               }}>
+//                 <AnimatePresence>
+//                   {post.tags.map((tag) => (
+//                     <motion.div
+//                       key={tag}
+//                       initial={{ scale: 0, opacity: 0 }}
+//                       animate={{ scale: 1, opacity: 1 }}
+//                       exit={{ scale: 0, opacity: 0 }}
+//                       transition={{ duration: 0.2 }}
+//                     >
+//                       <Chip
+//                         label={tag}
+//                         onDelete={() => handleRemoveTag(tag)}
+//                         color="primary"
+//                         variant="outlined"
+//                         sx={{ 
+//                           transition: 'all 0.2s ease',
+//                           '&:hover': {
+//                             backgroundColor: 'primary.light',
+//                             color: 'white'
+//                           }
+//                         }}
+//                       />
+//                     </motion.div>
+//                   ))}
+//                 </AnimatePresence>
+                
+//                 {post.tags.length === 0 && (
+//                   <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+//                     No tags added yet
+//                   </Typography>
+//                 )}
+//               </Box>
+
+//               <Typography variant="subtitle1" gutterBottom>
+//                 Cover Image
+//               </Typography>
+              
+//               <AnimatePresence mode="wait">
+//                 {!post.coverImage ? (
+//                   <motion.div
+//                     key="upload-button"
+//                     initial={{ opacity: 0 }}
+//                     animate={{ opacity: 1 }}
+//                     exit={{ opacity: 0 }}
+//                   >
+//                     <Button
+//                       fullWidth
+//                       variant="outlined"
+//                       startIcon={<ImageIcon />}
+//                       component="label"
+//                       sx={{ 
+//                         mb: 2,
+//                         height: '100px',
+//                         border: '2px dashed',
+//                         borderColor: 'divider',
+//                         '&:hover': {
+//                           borderColor: 'primary.main',
+//                           backgroundColor: 'rgba(0, 0, 0, 0.04)'
+//                         }
+//                       }}
+//                     >
+//                       Upload Cover Image
+//                       <input type="file" hidden accept="image/*" onChange={handleCoverImageUpload} />
+//                     </Button>
+//                   </motion.div>
+//                 ) : (
+//                   <motion.div
+//                     key="image-preview"
+//                     initial={{ opacity: 0 }}
+//                     animate={{ opacity: 1 }}
+//                     exit={{ opacity: 0 }}
+//                   >
+//                     <Box sx={{ mt: 2, position: 'relative' }}>
+//                       <img
+//                         src={post.coverImage}
+//                         alt="Cover"
+//                         style={{
+//                           width: '100%',
+//                           height: '200px',
+//                           objectFit: 'cover',
+//                           borderRadius: '8px',
+//                         }}
+//                       />
+//                       <Box sx={{
+//                         position: 'absolute',
+//                         top: 0,
+//                         right: 0,
+//                         p: 1
+//                       }}>
+//                         <Tooltip title="Remove image">
+//                           <IconButton
+//                             onClick={handleRemoveCoverImage}
+//                             size="small"
+//                             sx={{
+//                               bgcolor: 'rgba(0,0,0,0.5)',
+//                               color: 'white',
+//                               '&:hover': {
+//                                 bgcolor: 'rgba(255,0,0,0.7)'
+//                               }
+//                             }}
+//                           >
+//                             <DeleteOutline fontSize="small" />
+//                           </IconButton>
+//                         </Tooltip>
+//                       </Box>
+//                     </Box>
+//                   </motion.div>
+//                 )}
+//               </AnimatePresence>
+              
+//               <Divider sx={{ my: 3 }} />
+              
+//               <Box sx={{ display: 'flex', gap: 2 }}>
+//                 <Button
+//                   fullWidth
+//                   variant="contained"
+//                   startIcon={<VisibilityOutlined />}
+//                   onClick={() => setIsPreview(!isPreview)}
+//                   color="info"
+//                 >
+//                   {isPreview ? 'Edit' : 'Preview'}
+//                 </Button>
+                
+//                 <Button
+//                   fullWidth
+//                   variant="contained"
+//                   startIcon={<Publish />}
+//                   color="primary"
+//                   onClick={handlePublish}
+//                   disabled={isSaving || isUploading}
+//                 >
+//                   Publish
+//                 </Button>
+//               </Box>
+//             </Paper>
+//           </motion.div>
+          
+//           <motion.div variants={itemVariants}>
+//             <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+//               <Typography variant="subtitle1" gutterBottom>
+//                 Publishing Tips
+//               </Typography>
+//               <Alert severity="info" sx={{ mb: 2 }}>
+//                 Posts with images get 94% more views!
+//               </Alert>
+//               <Alert severity="success">
+//                 Optimal post length: 1,500-2,000 words
+//               </Alert>
+//             </Paper>
+//           </motion.div>
+//         </Box>
+//       </Box>
+      
+   
+      
+//       <Backdrop
+//         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+//         open={isSaving || isUploading}
+//       >
+//         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+//           <CircularProgress color="inherit" />
+//           <Typography variant="body1">
+//             {isUploading ? uploadStatus : 
+//              post.isDraft ? 'Saving your draft...' : 'Publishing your post...'}
+//           </Typography>
+//         </Box>
+//       </Backdrop>
+      
+//       <Snackbar
+//         open={notification.open}
+//         autoHideDuration={4000}
+//         onClose={handleCloseNotification}
+//         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+//       >
+//         <Alert 
+//           onClose={handleCloseNotification} 
+//           severity={notification.severity} 
+//           variant="filled"
+//           sx={{ width: '100%' }}
+//         >
+//           {notification.message}
+//         </Alert>
+//       </Snackbar>
+//     </Container>
+//   );
+// };
+
+// export default BlogCreation;
+
+
+//==================================================================================
+
+
+
+// import {
+//   DeleteOutline,
+//   Image as ImageIcon,
+//   InfoOutlined,
+//   Publish,
+//   Save,
+//   VisibilityOutlined
+// } from '@mui/icons-material';
+// import {
+//   Alert,
+//   Backdrop,
+//   Box,
+//   Button,
+//   Chip,
+//   CircularProgress,
+//   Container,
+//   Divider,
+//   FormControl,
+//   IconButton,
+//   InputLabel,
+//   MenuItem,
+//   Paper,
+//   Select,
+//   Snackbar,
+//   Tab,
+//   Tabs,
+//   TextField,
+//   Tooltip,
+//   Typography,
+//   useMediaQuery,
+//   useTheme
+// } from '@mui/material';
+// import axios from 'axios';
+// import { AnimatePresence, motion } from 'framer-motion';
+// import React, { useEffect, useState } from 'react';
+// import { useLocation } from 'react-router-dom';
+// import { categories } from '../Data/blogData';
+// import BlogPreview from './Blog/BlogPreview';
+// import Navbar from './Navbar';
+// import EnhancedTiptapEditor from './TiptapEditor';
+
+// const BlogCreation = () => {
+//   const location = useLocation();
+//   const blogData = location.state?.blogData;  // Get blogData from navigation state
+//   const theme = useTheme();
+//   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+//   const [activeTab, setActiveTab] = useState(0);
+//   const [isPreview, setIsPreview] = useState(false);
+//   const [isSaving, setIsSaving] = useState(false);
+//   const [isUploading, setIsUploading] = useState(false);
+//   const [uploadStatus, setUploadStatus] = useState('');
+//   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
+//   const [post, setPost] = useState({
+//     title: '',
+//     content: null,
+//     category: '',
+//     tags: [],
+//     coverImage: '',
+//     isDraft: true,
+//     author: {
+//       name: '',
+//       avatar: ''
+//     }
+//   });
+
+//   // Initialize with blogData if provided
+//   useEffect(() => {
+//     if (blogData) {
+//       setPost({
+//         title: blogData.title,
+//         content: typeof blogData.content === 'string' ? JSON.parse(blogData.content) : blogData.content,
+//         category: blogData.category || '',
+//         tags: blogData.tags || [],
+//         coverImage: blogData.coverImageUrl || '',
+//         isDraft: !blogData.isPublished,
+//         author: {
+//           name: blogData.fullName || blogData.username || '',
+//           avatar: blogData.profileImageUrl || ''
+//         }
+//       });
+//     }
+//   }, [blogData]);
+
+//   // Animation variants
+//   const containerVariants = {
+//     hidden: { opacity: 0 },
+//     visible: { 
+//       opacity: 1,
+//       transition: { 
+//         staggerChildren: 0.1,
+//         delayChildren: 0.2
+//       }
+//     }
+//   };
+
+//   const itemVariants = {
+//     hidden: { y: 20, opacity: 0 },
+//     visible: { y: 0, opacity: 1 }
+//   };
+
+//   const handleContentChange = (newContent) => {
+//     setPost((prev) => ({ ...prev, content: newContent }));
+//   };
+
+//   const handleTagInput = (event) => {
+//     if (event.key === 'Enter' && event.target.value.trim()) {
+//       const newTag = event.target.value.trim();
+//       if (!post.tags.includes(newTag) && post.tags.length < 10) {
+//         setPost((prev) => ({
+//           ...prev,
+//           tags: [...prev.tags, newTag],
+//         }));
+        
+//         setNotification({
+//           open: true,
+//           message: `Tag "${newTag}" added!`,
+//           severity: 'success'
+//         });
+//       } else if (post.tags.length >= 10) {
+//         setNotification({
+//           open: true,
+//           message: 'Maximum 10 tags allowed',
+//           severity: 'warning'
+//         });
+//       }
+//       event.target.value = '';
+//     }
+//   };
+
+//   const handleRemoveTag = (tagToRemove) => {
+//     setPost((prev) => ({
+//       ...prev,
+//       tags: prev.tags.filter((tag) => tag !== tagToRemove),
+//     }));
+//   };
+
+//   const uploadToCloudinary = async (file) => {
+//     try {
+//       setIsUploading(true);
+//       setUploadStatus('Uploading...');
+      
+//       const formData = new FormData();
+//       formData.append('file', file);
+//       formData.append('upload_preset', 'my_unsigned');
+      
+//       const response = await axios.post(
+//         'https://api.cloudinary.com/v1_1/dblu8hz5g/image/upload',
+//         formData,
+//         {
+//           headers: {
+//             'Content-Type': 'multipart/form-data'
+//           }
+//         }
+//       );
+      
+//       if (response.data && response.data.secure_url) {
+//         setUploadStatus('Upload complete!');
+//         return response.data.secure_url;
+//       } else {
+//         throw new Error('Upload failed');
+//       }
+//     } catch (error) {
+//       console.error('Error uploading to Cloudinary:', error);
+//       setUploadStatus('Upload failed. Please try again.');
+//       throw error;
+//     } finally {
+//       setIsUploading(false);
+//     }
+//   };
+
+//   const handleCoverImageUpload = async (event) => {
+//     const file = event.target.files[0];
+//     if (file) {
+//       if (file.size > 5000000) {
+//         setNotification({
+//           open: true,
+//           message: 'Image size should be less than 5MB',
+//           severity: 'error'
+//         });
+//         return;
+//       }
+      
+//       try {
+//         const imageUrl = await uploadToCloudinary(file);
+//         setPost((prev) => ({
+//           ...prev,
+//           coverImage: imageUrl,
+//         }));
+        
+//         setNotification({
+//           open: true,
+//           message: 'Cover image uploaded successfully!',
+//           severity: 'success'
+//         });
+//       } catch (error) {
+//         setNotification({
+//           open: true,
+//           message: 'Failed to upload cover image',
+//           severity: 'error'
+//         });
+//       }
+//     }
+//   };
+
+//   const handleRemoveCoverImage = () => {
+//     setPost(prev => ({ ...prev, coverImage: '' }));
+//   };
+
+//   const getUserEmail = () => {
+//     const email = sessionStorage.getItem('userEmail');
+//     if (!email) {
+//       throw new Error('User email not found in session');
+//     }
+//     return email;
+//   };
+
+//  const createBlogPost = async (postData) => {
+//   try {
+//     const userEmail = getUserEmail();
+//     const url = blogData 
+//       ? `https://localhost:7163/api/Post/byemail/${blogData.id}`  // PUT for existing
+//       : `https://localhost:7163/api/Post/byemail/${userEmail}`;   // POST for new
+
+//     const method = blogData ? 'put' : 'post';
+    
+//     const response = await axios[method](url, {
+//       title: postData.title,
+//       content: JSON.stringify(postData.content), // Stringify content
+//       coverImageUrl: postData.coverImageUrl,
+//       category: postData.category,
+//       tags: postData.tags,
+//       isPublished: postData.isPublished
+//     }, {
+//       headers: {
+//         'Content-Type': 'application/json',
+//       }
+//     });
+    
+//     return response.data;
+//   } catch (error) {
+//     console.error('Error saving post:', error);
+//     throw error;
+//   }
+// };
+
+//   const handleSave = async (isPublished = false) => {
+//     if (!post.title) {
+//       setNotification({
+//         open: true,
+//         message: 'Please add a title to your post',
+//         severity: 'warning'
+//       });
+//       return;
+//     }
+
+//     if (isPublished) {
+//       const missingFields = [];
+//       if (!post.content) missingFields.push('content');
+//       if (!post.category) missingFields.push('category');
+//       if (!post.coverImage) missingFields.push('cover image');
+
+//       if (missingFields.length > 0) {
+//         setNotification({
+//           open: true,
+//           message: `Please fill in all required fields before publishing: ${missingFields.join(', ')}`,
+//           severity: 'error'
+//         });
+//         return;
+//       }
+//     }
+
+//     setIsSaving(true);
+    
+//     try {
+//       const userEmail = getUserEmail();
+      
+//       const postData = {
+//         userEmail: userEmail,
+//         title: post.title,
+//         content: post.content,
+//         coverImageUrl: post.coverImage || null,
+//         category: post.category || null,
+//         tags: post.tags.length > 0 ? post.tags : null,
+//         isPublished: isPublished
+//       };
+
+//       await createBlogPost(postData);
+      
+//       setNotification({
+//         open: true,
+//         message: isPublished 
+//           ? blogData 
+//             ? 'Post updated and published successfully!' 
+//             : 'Post published successfully!'
+//           : blogData 
+//             ? 'Draft updated successfully!' 
+//             : 'Draft saved successfully!',
+//         severity: 'success'
+//       });
+      
+//       setPost(prev => ({ ...prev, isDraft: !isPublished }));
+
+//     } catch (error) {
+//       console.error('Error saving post:', error);
+      
+//       let errorMessage = 'Failed to save post';
+//       if (error.response) {
+//         if (error.response.data.errors) {
+//           errorMessage = Object.values(error.response.data.errors)
+//             .flat()
+//             .join(', ');
+//         } else if (error.response.data.message) {
+//           errorMessage = error.response.data.message;
+//         }
+//       }
+
+//       setNotification({
+//         open: true,
+//         message: errorMessage,
+//         severity: 'error'
+//       });
+//     } finally {
+//       setIsSaving(false);
+//     }
+//   };
+
+//   const handleSaveDraft = () => {
+//     handleSave(false);
+//   };
+
+//   const handlePublish = () => {
+//     handleSave(true);
+//   };
+
+//   const handleCloseNotification = () => {
+//     setNotification(prev => ({ ...prev, open: false }));
+//   };
+
+//   const calculateWordCount = (content) => {
+//     if (!content) return 0;
+    
+//     let text = '';
+//     const extractText = (node) => {
+//       if (node.text) {
+//         text += node.text + ' ';
+//       }
+//       if (node.content) {
+//         node.content.forEach(extractText);
+//       }
+//     };
+    
+//     if (content.content) {
+//       content.content.forEach(extractText);
+//     }
+    
+//     return text.trim() ? text.trim().split(/\s+/).length : 0;
+//   };
+
+//   const wordCount = calculateWordCount(post.content);
+//   const readTime = Math.max(1, Math.ceil(wordCount / 200));
+
+//   useEffect(() => {
+//     const fetchUserData = async () => {
+//       try {
+//         const userEmail = getUserEmail();
+//         const userResponse = await axios.get(
+//           `https://localhost:7163/api/User/by-email?email=${encodeURIComponent(userEmail)}`
+//         );
+
+//         setPost(prev => ({
+//           ...prev,
+//           author: {
+//             name: userResponse.data.full_Name || userResponse.data.username || "",
+//             avatar: userResponse.data.profile_Image_Url || ""
+//           }
+//         }));
+//       } catch (error) {
+//         console.error('Error fetching user data:', error);
+//       }
+//     };
+
+//     // Only fetch user data if we're not editing an existing post
+//     if (!blogData) {
+//       fetchUserData();
+//     }
+//   }, [blogData]);
+
+//   return (
+//     <Container maxWidth="xl" sx={{ py: 8 }}>
+//       <Navbar />
+      
+//       <motion.div
+//         initial={{ opacity: 0, y: 20 }}
+//         animate={{ opacity: 1, y: 0 }}
+//         transition={{ duration: 0.5 }}
+//       >
+//         <Paper
+//           elevation={3}
+//           sx={{
+//             p: { xs: 3, md: 4 },
+//             mb: 4,
+//             background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+//             color: 'white',
+//             position: 'relative',
+//             overflow: 'hidden',
+//             borderRadius: 2,
+//             display: 'flex',
+//             flexDirection: { xs: 'column', md: 'row' },
+//             alignItems: 'center',
+//             justifyContent: 'space-between'
+//           }}
+//         >
+//           <Box>
+//             <motion.div
+//               initial={{ scale: 0.95, opacity: 0 }}
+//               animate={{ scale: 1, opacity: 1 }}
+//               transition={{ duration: 0.5 }}
+//             >
+//               <Typography variant="h3" gutterBottom fontWeight="bold">
+//                 {blogData ? 'Edit Your Blog Post' : 'Create Your Blog Post'}
+//               </Typography>
+//               <Typography variant="h6" sx={{ opacity: 0.9 }}>
+//                 {blogData ? 'Update your existing post' : 'Share your thoughts with the world'}
+//               </Typography>
+//             </motion.div>
+//           </Box>
+          
+//           <motion.div
+//             initial={{ opacity: 0, scale: 0.8 }}
+//             animate={{ opacity: 1, scale: 1 }}
+//             transition={{ delay: 0.3, duration: 0.5 }}
+//           >
+//             <Box sx={{ 
+//               display: 'flex',
+//               gap: 2,
+//               mt: { xs: 2, md: 0 }
+//             }}>
+//               <Tooltip title="Save as draft">
+//                 <Button 
+//                   variant="contained" 
+//                   color="secondary"
+//                   startIcon={<Save />}
+//                   onClick={handleSaveDraft}
+//                   disabled={isSaving || isUploading}
+//                 >
+//                   Save
+//                 </Button>
+//               </Tooltip>
+              
+//               <Tooltip title={blogData && blogData.isPublished ? "Update published post" : "Publish your post"}>
+//                 <Button 
+//                   variant="contained" 
+//                   color="secondary"
+//                   startIcon={<Publish />}
+//                   onClick={handlePublish}
+//                   disabled={isSaving || isUploading}
+//                   sx={{ bgcolor: 'white', color: 'primary.main', '&:hover': { bgcolor: 'grey.100' } }}
+//                 >
+//                   {blogData && blogData.isPublished ? 'Update' : 'Publish'}
+//                 </Button>
+//               </Tooltip>
+//             </Box>
+//           </motion.div>
+          
+//           <Box sx={{
+//             position: 'absolute',
+//             width: '300px',
+//             height: '300px',
+//             borderRadius: '50%',
+//             backgroundColor: 'rgba(255,255,255,0.1)',
+//             bottom: '-150px',
+//             right: '-100px',
+//             zIndex: 0
+//           }} />
+//         </Paper>
+//       </motion.div>
+
+//       <Box sx={{ display: 'flex', gap: 3, flexDirection: isMobile ? 'column' : 'row' }}>
+//         <Box 
+//           component={motion.div}
+//           variants={containerVariants}
+//           initial="hidden"
+//           animate="visible"
+//           sx={{ flex: 1 }}
+//         >
+//           <motion.div variants={itemVariants}>
+//             <Paper 
+//               elevation={2} 
+//               sx={{ 
+//                 p: 3, 
+//                 mb: 3,
+//                 borderRadius: 2,
+//                 transition: 'all 0.3s ease-in-out'
+//               }}
+//             >
+//               <TextField
+//                 fullWidth
+//                 label="Blog Title"
+//                 variant="outlined"
+//                 value={post.title}
+//                 onChange={(e) => setPost((prev) => ({ ...prev, title: e.target.value }))}
+//                 placeholder="Enter an attention-grabbing title..."
+//                 InputProps={{
+//                   sx: {
+//                     fontSize: '1.2rem',
+//                     '&:focus': {
+//                       boxShadow: `0 0 0 2px ${theme.palette.primary.main}`,
+//                     }
+//                   }
+//                 }}
+//                 sx={{ 
+//                   mb: 3,
+//                   '& .MuiOutlinedInput-root': {
+//                     transition: 'all 0.3s ease'
+//                   },
+//                   '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+//                     borderColor: theme.palette.primary.light
+//                   }
+//                 }}
+//               />
+
+//               <Box sx={{ mb: 2 }}>
+//                 <Tabs 
+//                   value={isPreview ? 1 : 0} 
+//                   onChange={(_, newValue) => setIsPreview(Boolean(newValue))}
+//                   sx={{ mb: 2 }}
+//                 >
+//                   <Tab label="Editor" />
+//                   <Tab label="Preview" />
+//                 </Tabs>
+//               </Box>
+
+//               <AnimatePresence mode="wait">
+//                 {!isPreview ? (
+//                   <motion.div
+//                     key="editor"
+//                     initial={{ opacity: 0 }}
+//                     animate={{ opacity: 1 }}
+//                     exit={{ opacity: 0 }}
+//                     transition={{ duration: 0.25 }}
+//                   >
+//                     <EnhancedTiptapEditor 
+//                       content={post.content || undefined}
+//                       onChange={handleContentChange} 
+//                     />
+//                   </motion.div>
+//                 ) : (
+//                   <motion.div
+//                     key="preview"
+//                     initial={{ opacity: 0 }}
+//                     animate={{ opacity: 1 }}
+//                     exit={{ opacity: 0 }}
+//                     transition={{ duration: 0.25 }}
+//                   >
+//                     <Paper 
+//                       elevation={1} 
+//                       sx={{ 
+//                         p: 3, 
+//                         minHeight: '400px', 
+//                         borderRadius: 1,
+//                         bgcolor: 'grey.50'
+//                       }}
+//                     >
+//                       <BlogPreview post={post} />
+//                     </Paper>
+//                   </motion.div>
+//                 )}
+//               </AnimatePresence>
+              
+//               <Box sx={{ 
+//                 display: 'flex', 
+//                 justifyContent: 'space-between', 
+//                 alignItems: 'center', 
+//                 mt: 2,
+//                 color: 'text.secondary',
+//                 fontSize: '0.9rem'
+//               }}>
+//                 <Typography variant="body2">
+//                   {wordCount} words · {readTime} min read
+//                 </Typography>
+//                 <Typography variant="body2">
+//                   {post.isDraft ? 'Draft' : blogData && blogData.isPublished ? 'Published' : 'Ready to publish'}
+//                 </Typography>
+//               </Box>
+//             </Paper>
+//           </motion.div>
+//         </Box>
+
+//         <Box
+//           component={motion.div}
+//           variants={containerVariants}
+//           initial="hidden"
+//           animate="visible"
+//           sx={{ width: isMobile ? '100%' : '350px' }}
+//         >
+//           <motion.div variants={itemVariants}>
+//             <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+//               <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+//                 <InfoOutlined fontSize="small" />
+//                 Post Settings
+//               </Typography>
+//               <Divider sx={{ mb: 3 }} />
+              
+//               <FormControl fullWidth sx={{ mb: 3 }}>
+//                 <InputLabel>Category</InputLabel>
+//                 <Select
+//                   value={post.category}
+//                   label="Category"
+//                   onChange={(e) => setPost((prev) => ({ ...prev, category: e.target.value }))}
+//                   sx={{
+//                     '& .MuiSelect-select': {
+//                       display: 'flex',
+//                       alignItems: 'center',
+//                       gap: 1
+//                     }
+//                   }}
+//                   MenuProps={{
+//                     PaperProps: {
+//                       sx: {
+//                         maxHeight: 300,
+//                         '& .MuiMenuItem-root': {
+//                           transition: 'background-color 0.2s ease',
+//                           display: 'flex',
+//                           alignItems: 'center',
+//                           gap: 1
+//                         }
+//                       }
+//                     }
+//                   }}
+//                 >
+//                   {categories.map((category) => (
+//                     <MenuItem key={category.value} value={category.value}>
+//                       {category.icon && React.cloneElement(category.icon, { fontSize: 'small' })}
+//                       {category.label}
+//                     </MenuItem>
+//                   ))}
+//                 </Select>
+//               </FormControl>
+
+//               <TextField
+//                 fullWidth
+//                 label="Add Tags"
+//                 placeholder="Press Enter to add tags"
+//                 onKeyDown={handleTagInput}
+//                 helperText={`${post.tags.length}/10 tags added`}
+//                 sx={{ mb: 2 }}
+//                 InputProps={{
+//                   endAdornment: (
+//                     <Tooltip title="Add up to 10 tags to improve discoverability">
+//                       <InfoOutlined color="action" fontSize="small" sx={{ cursor: 'help' }} />
+//                     </Tooltip>
+//                   )
+//                 }}
+//               />
+
+//               <Box sx={{ 
+//                 display: 'flex', 
+//                 flexWrap: 'wrap', 
+//                 gap: 1, 
+//                 mb: 3,
+//                 minHeight: '50px'
+//               }}>
+//                 <AnimatePresence>
+//                   {post.tags.map((tag) => (
+//                     <motion.div
+//                       key={tag}
+//                       initial={{ scale: 0, opacity: 0 }}
+//                       animate={{ scale: 1, opacity: 1 }}
+//                       exit={{ scale: 0, opacity: 0 }}
+//                       transition={{ duration: 0.2 }}
+//                     >
+//                       <Chip
+//                         label={tag}
+//                         onDelete={() => handleRemoveTag(tag)}
+//                         color="primary"
+//                         variant="outlined"
+//                         sx={{ 
+//                           transition: 'all 0.2s ease',
+//                           '&:hover': {
+//                             backgroundColor: 'primary.light',
+//                             color: 'white'
+//                           }
+//                         }}
+//                       />
+//                     </motion.div>
+//                   ))}
+//                 </AnimatePresence>
+                
+//                 {post.tags.length === 0 && (
+//                   <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+//                     No tags added yet
+//                   </Typography>
+//                 )}
+//               </Box>
+
+//               <Typography variant="subtitle1" gutterBottom>
+//                 Cover Image
+//               </Typography>
+              
+//               <AnimatePresence mode="wait">
+//                 {!post.coverImage ? (
+//                   <motion.div
+//                     key="upload-button"
+//                     initial={{ opacity: 0 }}
+//                     animate={{ opacity: 1 }}
+//                     exit={{ opacity: 0 }}
+//                   >
+//                     <Button
+//                       fullWidth
+//                       variant="outlined"
+//                       startIcon={<ImageIcon />}
+//                       component="label"
+//                       sx={{ 
+//                         mb: 2,
+//                         height: '100px',
+//                         border: '2px dashed',
+//                         borderColor: 'divider',
+//                         '&:hover': {
+//                           borderColor: 'primary.main',
+//                           backgroundColor: 'rgba(0, 0, 0, 0.04)'
+//                         }
+//                       }}
+//                     >
+//                       Upload Cover Image
+//                       <input type="file" hidden accept="image/*" onChange={handleCoverImageUpload} />
+//                     </Button>
+//                   </motion.div>
+//                 ) : (
+//                   <motion.div
+//                     key="image-preview"
+//                     initial={{ opacity: 0 }}
+//                     animate={{ opacity: 1 }}
+//                     exit={{ opacity: 0 }}
+//                   >
+//                     <Box sx={{ mt: 2, position: 'relative' }}>
+//                       <img
+//                         src={post.coverImage}
+//                         alt="Cover"
+//                         style={{
+//                           width: '100%',
+//                           height: '200px',
+//                           objectFit: 'cover',
+//                           borderRadius: '8px',
+//                         }}
+//                       />
+//                       <Box sx={{
+//                         position: 'absolute',
+//                         top: 0,
+//                         right: 0,
+//                         p: 1
+//                       }}>
+//                         <Tooltip title="Remove image">
+//                           <IconButton
+//                             onClick={handleRemoveCoverImage}
+//                             size="small"
+//                             sx={{
+//                               bgcolor: 'rgba(0,0,0,0.5)',
+//                               color: 'white',
+//                               '&:hover': {
+//                                 bgcolor: 'rgba(255,0,0,0.7)'
+//                               }
+//                             }}
+//                           >
+//                             <DeleteOutline fontSize="small" />
+//                           </IconButton>
+//                         </Tooltip>
+//                       </Box>
+//                     </Box>
+//                   </motion.div>
+//                 )}
+//               </AnimatePresence>
+              
+//               <Divider sx={{ my: 3 }} />
+              
+//               <Box sx={{ display: 'flex', gap: 2 }}>
+//                 <Button
+//                   fullWidth
+//                   variant="contained"
+//                   startIcon={<VisibilityOutlined />}
+//                   onClick={() => setIsPreview(!isPreview)}
+//                   color="info"
+//                 >
+//                   {isPreview ? 'Edit' : 'Preview'}
+//                 </Button>
+                
+//                 <Button
+//                   fullWidth
+//                   variant="contained"
+//                   startIcon={<Publish />}
+//                   color="primary"
+//                   onClick={handlePublish}
+//                   disabled={isSaving || isUploading}
+//                 >
+//                   {blogData && blogData.isPublished ? 'Update' : 'Publish'}
+//                 </Button>
+//               </Box>
+//             </Paper>
+//           </motion.div>
+          
+//           <motion.div variants={itemVariants}>
+//             <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+//               <Typography variant="subtitle1" gutterBottom>
+//                 Publishing Tips
+//               </Typography>
+//               <Alert severity="info" sx={{ mb: 2 }}>
+//                 Posts with images get 94% more views!
+//               </Alert>
+//               <Alert severity="success">
+//                 Optimal post length: 1,500-2,000 words
+//               </Alert>
+//             </Paper>
+//           </motion.div>
+//         </Box>
+//       </Box>
+      
+//       <Backdrop
+//         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+//         open={isSaving || isUploading}
+//       >
+//         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+//           <CircularProgress color="inherit" />
+//           <Typography variant="body1">
+//             {isUploading ? uploadStatus : 
+//              post.isDraft ? 'Saving your draft...' : 'Publishing your post...'}
+//           </Typography>
+//         </Box>
+//       </Backdrop>
+      
+//       <Snackbar
+//         open={notification.open}
+//         autoHideDuration={4000}
+//         onClose={handleCloseNotification}
+//         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+//       >
+//         <Alert 
+//           onClose={handleCloseNotification} 
+//           severity={notification.severity} 
+//           variant="filled"
+//           sx={{ width: '100%' }}
+//         >
+//           {notification.message}
+//         </Alert>
+//       </Snackbar>
+//     </Container>
+//   );
+// };
+
+// export default BlogCreation;
+
+
+//=================================================================
+
+
+// import {
+//   DeleteOutline,
+//   Image as ImageIcon,
+//   InfoOutlined,
+//   Publish,
+//   Save,
+//   VisibilityOutlined
+// } from '@mui/icons-material';
+// import {
+//   Alert,
+//   Backdrop,
+//   Box,
+//   Button,
+//   Chip,
+//   CircularProgress,
+//   Container,
+//   Divider,
+//   FormControl,
+//   IconButton,
+//   InputLabel,
+//   MenuItem,
+//   Paper,
+//   Select,
+//   Snackbar,
+//   Tab,
+//   Tabs,
+//   TextField,
+//   Tooltip,
+//   Typography,
+//   useMediaQuery,
+//   useTheme
+// } from '@mui/material';
+// import axios from 'axios';
+// import { AnimatePresence, motion } from 'framer-motion';
+// import React, { useEffect, useState } from 'react';
+// import { useLocation } from 'react-router-dom';
+// import { categories } from '../Data/blogData';
+// import BlogPreview from './BlogPreview';
+// import Navbar from './Navbar';
+// import EnhancedTiptapEditor from './TiptapEditor';
+
+// const BlogCreation = () => {
+//   const location = useLocation();
+//   const blogData = location.state?.blogData;  // Get blogData from navigation state
+//   const theme = useTheme();
+//   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+//   const [activeTab, setActiveTab] = useState(0);
+//   const [isPreview, setIsPreview] = useState(false);
+//   const [isSaving, setIsSaving] = useState(false);
+//   const [isUploading, setIsUploading] = useState(false);
+//   const [uploadStatus, setUploadStatus] = useState('');
+//   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
+//   const [post, setPost] = useState({
+//     title: '',
+//     content: null,
+//     category: '',
+//     tags: [],
+//     coverImage: '',
+//     isDraft: true,
+//     author: {
+//       name: '',
+//       avatar: ''
+//     }
+//   });
+
+//   // Initialize with blogData if provided
+//   useEffect(() => {
+//     if (blogData) {
+//       setPost({
+//         title: blogData.title,
+//         content: typeof blogData.content === 'string' ? JSON.parse(blogData.content) : blogData.content,
+//         category: blogData.category || '',
+//         tags: blogData.tags || [],
+//         coverImage: blogData.coverImageUrl || '',
+//         isDraft: !blogData.isPublished,
+//         author: {
+//           name: blogData.fullName || blogData.username || '',
+//           avatar: blogData.profileImageUrl || ''
+//         }
+//       });
+//     }
+//   }, [blogData]);
+
+//   // Animation variants
+//   const containerVariants = {
+//     hidden: { opacity: 0 },
+//     visible: { 
+//       opacity: 1,
+//       transition: { 
+//         staggerChildren: 0.1,
+//         delayChildren: 0.2
+//       }
+//     }
+//   };
+
+//   const itemVariants = {
+//     hidden: { y: 20, opacity: 0 },
+//     visible: { y: 0, opacity: 1 }
+//   };
+
+//   const handleContentChange = (newContent) => {
+//     setPost((prev) => ({ ...prev, content: newContent }));
+//   };
+
+//   const handleTagInput = (event) => {
+//     if (event.key === 'Enter' && event.target.value.trim()) {
+//       const newTag = event.target.value.trim();
+//       if (!post.tags.includes(newTag) && post.tags.length < 10) {
+//         setPost((prev) => ({
+//           ...prev,
+//           tags: [...prev.tags, newTag],
+//         }));
+        
+//         setNotification({
+//           open: true,
+//           message: `Tag "${newTag}" added!`,
+//           severity: 'success'
+//         });
+//       } else if (post.tags.length >= 10) {
+//         setNotification({
+//           open: true,
+//           message: 'Maximum 10 tags allowed',
+//           severity: 'warning'
+//         });
+//       }
+//       event.target.value = '';
+//     }
+//   };
+
+//   const handleRemoveTag = (tagToRemove) => {
+//     setPost((prev) => ({
+//       ...prev,
+//       tags: prev.tags.filter((tag) => tag !== tagToRemove),
+//     }));
+//   };
+
+//   const uploadToCloudinary = async (file) => {
+//     try {
+//       setIsUploading(true);
+//       setUploadStatus('Uploading...');
+      
+//       const formData = new FormData();
+//       formData.append('file', file);
+//       formData.append('upload_preset', 'my_unsigned');
+      
+//       const response = await axios.post(
+//         'https://api.cloudinary.com/v1_1/dblu8hz5g/image/upload',
+//         formData,
+//         {
+//           headers: {
+//             'Content-Type': 'multipart/form-data'
+//           }
+//         }
+//       );
+      
+//       if (response.data && response.data.secure_url) {
+//         setUploadStatus('Upload complete!');
+//         return response.data.secure_url;
+//       } else {
+//         throw new Error('Upload failed');
+//       }
+//     } catch (error) {
+//       console.error('Error uploading to Cloudinary:', error);
+//       setUploadStatus('Upload failed. Please try again.');
+//       throw error;
+//     } finally {
+//       setIsUploading(false);
+//     }
+//   };
+
+//   const handleCoverImageUpload = async (event) => {
+//     const file = event.target.files[0];
+//     if (file) {
+//       if (file.size > 5000000) {
+//         setNotification({
+//           open: true,
+//           message: 'Image size should be less than 5MB',
+//           severity: 'error'
+//         });
+//         return;
+//       }
+      
+//       try {
+//         const imageUrl = await uploadToCloudinary(file);
+//         setPost((prev) => ({
+//           ...prev,
+//           coverImage: imageUrl,
+//         }));
+        
+//         setNotification({
+//           open: true,
+//           message: 'Cover image uploaded successfully!',
+//           severity: 'success'
+//         });
+//       } catch (error) {
+//         setNotification({
+//           open: true,
+//           message: 'Failed to upload cover image',
+//           severity: 'error'
+//         });
+//       }
+//     }
+//   };
+
+//   const handleRemoveCoverImage = () => {
+//     setPost(prev => ({ ...prev, coverImage: '' }));
+//   };
+
+//   const getUserEmail = () => {
+//     const email = sessionStorage.getItem('userEmail');
+//     if (!email) {
+//       throw new Error('User email not found in session');
+//     }
+//     return email;
+//   };
+
+//   const createBlogPost = async (postData) => {
+//     try {
+//       const userEmail = getUserEmail();
+//       const isUpdate = !!blogData;
+      
+//       const url = isUpdate 
+//         ? `https://localhost:7163/api/Post/byemail/${blogData.id}`
+//         : `https://localhost:7163/api/Post`;
+
+//       const method = isUpdate ? 'put' : 'post';
+      
+//       // Prepare payload based on request type
+//       const payload = isUpdate
+//         ? {
+//             title: postData.title,
+//             content: JSON.stringify(postData.content),
+//             coverImageUrl: postData.coverImageUrl,
+//             category: postData.category,
+//             tags: postData.tags,
+//             isPublished: postData.isPublished
+//           }
+//         : {
+//             userEmail: userEmail,
+//             title: postData.title,
+//             content: JSON.stringify(postData.content),
+//             coverImageUrl: postData.coverImageUrl,
+//             category: postData.category,
+//             tags: postData.tags,
+//             isPublished: postData.isPublished
+//           };
+
+//       const response = await axios[method](url, payload, {
+//         headers: {
+//           'Content-Type': 'application/json',
+//         }
+//       });
+      
+//       return response.data;
+//     } catch (error) {
+//       console.error('Error saving post:', error);
+//       throw error;
+//     }
+//   };
+
+//   const handleSave = async (isPublished = false) => {
+//     if (!post.title) {
+//       setNotification({
+//         open: true,
+//         message: 'Please add a title to your post',
+//         severity: 'warning'
+//       });
+//       return;
+//     }
+
+//     if (isPublished) {
+//       const missingFields = [];
+//       if (!post.content) missingFields.push('content');
+//       if (!post.category) missingFields.push('category');
+//       if (!post.coverImage) missingFields.push('cover image');
+
+//       if (missingFields.length > 0) {
+//         setNotification({
+//           open: true,
+//           message: `Please fill in all required fields before publishing: ${missingFields.join(', ')}`,
+//           severity: 'error'
+//         });
+//         return;
+//       }
+//     }
+
+//     setIsSaving(true);
+    
+//     try {
+//       const postData = {
+//         title: post.title,
+//         content: post.content,
+//         coverImageUrl: post.coverImage || null,
+//         category: post.category || null,
+//         tags: post.tags.length > 0 ? post.tags : null,
+//         isPublished: isPublished
+//       };
+
+//       await createBlogPost(postData);
+      
+//       setNotification({
+//         open: true,
+//         message: isPublished 
+//           ? blogData 
+//             ? 'Post updated and published successfully!' 
+//             : 'Post published successfully!'
+//           : blogData 
+//             ? 'Draft updated successfully!' 
+//             : 'Draft saved successfully!',
+//         severity: 'success'
+//       });
+      
+//       setPost(prev => ({ ...prev, isDraft: !isPublished }));
+
+//     } catch (error) {
+//       console.error('Error saving post:', error);
+      
+//       let errorMessage = 'Failed to save post';
+//       if (error.response) {
+//         if (error.response.data.errors) {
+//           errorMessage = Object.values(error.response.data.errors)
+//             .flat()
+//             .join(', ');
+//         } else if (error.response.data.message) {
+//           errorMessage = error.response.data.message;
+//         }
+//       }
+
+//       setNotification({
+//         open: true,
+//         message: errorMessage,
+//         severity: 'error'
+//       });
+//     } finally {
+//       setIsSaving(false);
+//     }
+//   };
+
+//   const handleSaveDraft = () => {
+//     handleSave(false);
+//   };
+
+//   const handlePublish = () => {
+//     handleSave(true);
+//   };
+
+//   const handleCloseNotification = () => {
+//     setNotification(prev => ({ ...prev, open: false }));
+//   };
+
+//   const calculateWordCount = (content) => {
+//     if (!content) return 0;
+    
+//     let text = '';
+//     const extractText = (node) => {
+//       if (node.text) {
+//         text += node.text + ' ';
+//       }
+//       if (node.content) {
+//         node.content.forEach(extractText);
+//       }
+//     };
+    
+//     if (content.content) {
+//       content.content.forEach(extractText);
+//     }
+    
+//     return text.trim() ? text.trim().split(/\s+/).length : 0;
+//   };
+
+//   const wordCount = calculateWordCount(post.content);
+//   const readTime = Math.max(1, Math.ceil(wordCount / 200));
+
+//   useEffect(() => {
+//     const fetchUserData = async () => {
+//       try {
+//         const userEmail = getUserEmail();
+//         const userResponse = await axios.get(
+//           `https://localhost:7163/api/User/by-email?email=${encodeURIComponent(userEmail)}`
+//         );
+
+//         setPost(prev => ({
+//           ...prev,
+//           author: {
+//             name: userResponse.data.full_Name || userResponse.data.username || "",
+//             avatar: userResponse.data.profile_Image_Url || ""
+//           }
+//         }));
+//       } catch (error) {
+//         console.error('Error fetching user data:', error);
+//       }
+//     };
+
+//     // Only fetch user data if we're not editing an existing post
+//     if (!blogData) {
+//       fetchUserData();
+//     }
+//   }, [blogData]);
+
+//   return (
+//     <Container maxWidth="xl" sx={{ py: 8 }}>
+//       <Navbar />
+      
+//       <motion.div
+//         initial={{ opacity: 0, y: 20 }}
+//         animate={{ opacity: 1, y: 0 }}
+//         transition={{ duration: 0.5 }}
+//       >
+//         <Paper
+//           elevation={3}
+//           sx={{
+//             p: { xs: 3, md: 4 },
+//             mb: 4,
+//             background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+//             color: 'white',
+//             position: 'relative',
+//             overflow: 'hidden',
+//             borderRadius: 2,
+//             display: 'flex',
+//             flexDirection: { xs: 'column', md: 'row' },
+//             alignItems: 'center',
+//             justifyContent: 'space-between'
+//           }}
+//         >
+//           <Box>
+//             <motion.div
+//               initial={{ scale: 0.95, opacity: 0 }}
+//               animate={{ scale: 1, opacity: 1 }}
+//               transition={{ duration: 0.5 }}
+//             >
+//               <Typography variant="h3" gutterBottom fontWeight="bold">
+//                 {blogData ? 'Edit Your Blog Post' : 'Create Your Blog Post'}
+//               </Typography>
+//               <Typography variant="h6" sx={{ opacity: 0.9 }}>
+//                 {blogData ? 'Update your existing post' : 'Share your thoughts with the world'}
+//               </Typography>
+//             </motion.div>
+//           </Box>
+          
+//           <motion.div
+//             initial={{ opacity: 0, scale: 0.8 }}
+//             animate={{ opacity: 1, scale: 1 }}
+//             transition={{ delay: 0.3, duration: 0.5 }}
+//           >
+//             <Box sx={{ 
+//               display: 'flex',
+//               gap: 2,
+//               mt: { xs: 2, md: 0 }
+//             }}>
+//               <Tooltip title="Save as draft">
+//                 <Button 
+//                   variant="contained" 
+//                   color="secondary"
+//                   startIcon={<Save />}
+//                   onClick={handleSaveDraft}
+//                   disabled={isSaving || isUploading}
+//                 >
+//                   Save
+//                 </Button>
+//               </Tooltip>
+              
+//               <Tooltip title={blogData && blogData.isPublished ? "Update published post" : "Publish your post"}>
+//                 <Button 
+//                   variant="contained" 
+//                   color="secondary"
+//                   startIcon={<Publish />}
+//                   onClick={handlePublish}
+//                   disabled={isSaving || isUploading}
+//                   sx={{ bgcolor: 'white', color: 'primary.main', '&:hover': { bgcolor: 'grey.100' } }}
+//                 >
+//                   {blogData && blogData.isPublished ? 'Update' : 'Publish'}
+//                 </Button>
+//               </Tooltip>
+//             </Box>
+//           </motion.div>
+          
+//           <Box sx={{
+//             position: 'absolute',
+//             width: '300px',
+//             height: '300px',
+//             borderRadius: '50%',
+//             backgroundColor: 'rgba(255,255,255,0.1)',
+//             bottom: '-150px',
+//             right: '-100px',
+//             zIndex: 0
+//           }} />
+//         </Paper>
+//       </motion.div>
+
+//       <Box sx={{ display: 'flex', gap: 3, flexDirection: isMobile ? 'column' : 'row' }}>
+//         <Box 
+//           component={motion.div}
+//           variants={containerVariants}
+//           initial="hidden"
+//           animate="visible"
+//           sx={{ flex: 1 }}
+//         >
+//           <motion.div variants={itemVariants}>
+//             <Paper 
+//               elevation={2} 
+//               sx={{ 
+//                 p: 3, 
+//                 mb: 3,
+//                 borderRadius: 2,
+//                 transition: 'all 0.3s ease-in-out'
+//               }}
+//             >
+//               <TextField
+//                 fullWidth
+//                 label="Blog Title"
+//                 variant="outlined"
+//                 value={post.title}
+//                 onChange={(e) => setPost((prev) => ({ ...prev, title: e.target.value }))}
+//                 placeholder="Enter an attention-grabbing title..."
+//                 InputProps={{
+//                   sx: {
+//                     fontSize: '1.2rem',
+//                     '&:focus': {
+//                       boxShadow: `0 0 0 2px ${theme.palette.primary.main}`,
+//                     }
+//                   }
+//                 }}
+//                 sx={{ 
+//                   mb: 3,
+//                   '& .MuiOutlinedInput-root': {
+//                     transition: 'all 0.3s ease'
+//                   },
+//                   '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+//                     borderColor: theme.palette.primary.light
+//                   }
+//                 }}
+//               />
+
+//               <Box sx={{ mb: 2 }}>
+//                 <Tabs 
+//                   value={isPreview ? 1 : 0} 
+//                   onChange={(_, newValue) => setIsPreview(Boolean(newValue))}
+//                   sx={{ mb: 2 }}
+//                 >
+//                   <Tab label="Editor" />
+//                   <Tab label="Preview" />
+//                 </Tabs>
+//               </Box>
+
+//               <AnimatePresence mode="wait">
+//                 {!isPreview ? (
+//                   <motion.div
+//                     key="editor"
+//                     initial={{ opacity: 0 }}
+//                     animate={{ opacity: 1 }}
+//                     exit={{ opacity: 0 }}
+//                     transition={{ duration: 0.25 }}
+//                   >
+//                     <EnhancedTiptapEditor 
+//                       content={post.content || undefined}
+//                       onChange={handleContentChange} 
+//                     />
+//                   </motion.div>
+//                 ) : (
+//                   <motion.div
+//                     key="preview"
+//                     initial={{ opacity: 0 }}
+//                     animate={{ opacity: 1 }}
+//                     exit={{ opacity: 0 }}
+//                     transition={{ duration: 0.25 }}
+//                   >
+//                     <Paper 
+//                       elevation={1} 
+//                       sx={{ 
+//                         p: 3, 
+//                         minHeight: '400px', 
+//                         borderRadius: 1,
+//                         bgcolor: 'grey.50'
+//                       }}
+//                     >
+//                       <BlogPreview post={post} />
+//                     </Paper>
+//                   </motion.div>
+//                 )}
+//               </AnimatePresence>
+              
+//               <Box sx={{ 
+//                 display: 'flex', 
+//                 justifyContent: 'space-between', 
+//                 alignItems: 'center', 
+//                 mt: 2,
+//                 color: 'text.secondary',
+//                 fontSize: '0.9rem'
+//               }}>
+//                 <Typography variant="body2">
+//                   {wordCount} words · {readTime} min read
+//                 </Typography>
+//                 <Typography variant="body2">
+//                   {post.isDraft ? 'Draft' : blogData && blogData.isPublished ? 'Published' : 'Ready to publish'}
+//                 </Typography>
+//               </Box>
+//             </Paper>
+//           </motion.div>
+//         </Box>
+
+//         <Box
+//           component={motion.div}
+//           variants={containerVariants}
+//           initial="hidden"
+//           animate="visible"
+//           sx={{ width: isMobile ? '100%' : '350px' }}
+//         >
+//           <motion.div variants={itemVariants}>
+//             <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+//               <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+//                 <InfoOutlined fontSize="small" />
+//                 Post Settings
+//               </Typography>
+//               <Divider sx={{ mb: 3 }} />
+              
+//               <FormControl fullWidth sx={{ mb: 3 }}>
+//                 <InputLabel>Category</InputLabel>
+//                 <Select
+//                   value={post.category}
+//                   label="Category"
+//                   onChange={(e) => setPost((prev) => ({ ...prev, category: e.target.value }))}
+//                   sx={{
+//                     '& .MuiSelect-select': {
+//                       display: 'flex',
+//                       alignItems: 'center',
+//                       gap: 1
+//                     }
+//                   }}
+//                   MenuProps={{
+//                     PaperProps: {
+//                       sx: {
+//                         maxHeight: 300,
+//                         '& .MuiMenuItem-root': {
+//                           transition: 'background-color 0.2s ease',
+//                           display: 'flex',
+//                           alignItems: 'center',
+//                           gap: 1
+//                         }
+//                       }
+//                     }
+//                   }}
+//                 >
+//                   {categories.map((category) => (
+//                     <MenuItem key={category.value} value={category.value}>
+//                       {category.icon && React.cloneElement(category.icon, { fontSize: 'small' })}
+//                       {category.label}
+//                     </MenuItem>
+//                   ))}
+//                 </Select>
+//               </FormControl>
+
+//               <TextField
+//                 fullWidth
+//                 label="Add Tags"
+//                 placeholder="Press Enter to add tags"
+//                 onKeyDown={handleTagInput}
+//                 helperText={`${post.tags.length}/10 tags added`}
+//                 sx={{ mb: 2 }}
+//                 InputProps={{
+//                   endAdornment: (
+//                     <Tooltip title="Add up to 10 tags to improve discoverability">
+//                       <InfoOutlined color="action" fontSize="small" sx={{ cursor: 'help' }} />
+//                     </Tooltip>
+//                   )
+//                 }}
+//               />
+
+//               <Box sx={{ 
+//                 display: 'flex', 
+//                 flexWrap: 'wrap', 
+//                 gap: 1, 
+//                 mb: 3,
+//                 minHeight: '50px'
+//               }}>
+//                 <AnimatePresence>
+//                   {post.tags.map((tag) => (
+//                     <motion.div
+//                       key={tag}
+//                       initial={{ scale: 0, opacity: 0 }}
+//                       animate={{ scale: 1, opacity: 1 }}
+//                       exit={{ scale: 0, opacity: 0 }}
+//                       transition={{ duration: 0.2 }}
+//                     >
+//                       <Chip
+//                         label={tag}
+//                         onDelete={() => handleRemoveTag(tag)}
+//                         color="primary"
+//                         variant="outlined"
+//                         sx={{ 
+//                           transition: 'all 0.2s ease',
+//                           '&:hover': {
+//                             backgroundColor: 'primary.light',
+//                             color: 'white'
+//                           }
+//                         }}
+//                       />
+//                     </motion.div>
+//                   ))}
+//                 </AnimatePresence>
+                
+//                 {post.tags.length === 0 && (
+//                   <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+//                     No tags added yet
+//                   </Typography>
+//                 )}
+//               </Box>
+
+//               <Typography variant="subtitle1" gutterBottom>
+//                 Cover Image
+//               </Typography>
+              
+//               <AnimatePresence mode="wait">
+//                 {!post.coverImage ? (
+//                   <motion.div
+//                     key="upload-button"
+//                     initial={{ opacity: 0 }}
+//                     animate={{ opacity: 1 }}
+//                     exit={{ opacity: 0 }}
+//                   >
+//                     <Button
+//                       fullWidth
+//                       variant="outlined"
+//                       startIcon={<ImageIcon />}
+//                       component="label"
+//                       sx={{ 
+//                         mb: 2,
+//                         height: '100px',
+//                         border: '2px dashed',
+//                         borderColor: 'divider',
+//                         '&:hover': {
+//                           borderColor: 'primary.main',
+//                           backgroundColor: 'rgba(0, 0, 0, 0.04)'
+//                         }
+//                       }}
+//                     >
+//                       Upload Cover Image
+//                       <input type="file" hidden accept="image/*" onChange={handleCoverImageUpload} />
+//                     </Button>
+//                   </motion.div>
+//                 ) : (
+//                   <motion.div
+//                     key="image-preview"
+//                     initial={{ opacity: 0 }}
+//                     animate={{ opacity: 1 }}
+//                     exit={{ opacity: 0 }}
+//                   >
+//                     <Box sx={{ mt: 2, position: 'relative' }}>
+//                       <img
+//                         src={post.coverImage}
+//                         alt="Cover"
+//                         style={{
+//                           width: '100%',
+//                           height: '200px',
+//                           objectFit: 'cover',
+//                           borderRadius: '8px',
+//                         }}
+//                       />
+//                       <Box sx={{
+//                         position: 'absolute',
+//                         top: 0,
+//                         right: 0,
+//                         p: 1
+//                       }}>
+//                         <Tooltip title="Remove image">
+//                           <IconButton
+//                             onClick={handleRemoveCoverImage}
+//                             size="small"
+//                             sx={{
+//                               bgcolor: 'rgba(0,0,0,0.5)',
+//                               color: 'white',
+//                               '&:hover': {
+//                                 bgcolor: 'rgba(255,0,0,0.7)'
+//                               }
+//                             }}
+//                           >
+//                             <DeleteOutline fontSize="small" />
+//                           </IconButton>
+//                         </Tooltip>
+//                       </Box>
+//                     </Box>
+//                   </motion.div>
+//                 )}
+//               </AnimatePresence>
+              
+//               <Divider sx={{ my: 3 }} />
+              
+//               <Box sx={{ display: 'flex', gap: 2 }}>
+//                 <Button
+//                   fullWidth
+//                   variant="contained"
+//                   startIcon={<VisibilityOutlined />}
+//                   onClick={() => setIsPreview(!isPreview)}
+//                   color="info"
+//                 >
+//                   {isPreview ? 'Edit' : 'Preview'}
+//                 </Button>
+                
+//                 <Button
+//                   fullWidth
+//                   variant="contained"
+//                   startIcon={<Publish />}
+//                   color="primary"
+//                   onClick={handlePublish}
+//                   disabled={isSaving || isUploading}
+//                 >
+//                   {blogData && blogData.isPublished ? 'Update' : 'Publish'}
+//                 </Button>
+//               </Box>
+//             </Paper>
+//           </motion.div>
+          
+//           <motion.div variants={itemVariants}>
+//             <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+//               <Typography variant="subtitle1" gutterBottom>
+//                 Publishing Tips
+//               </Typography>
+//               <Alert severity="info" sx={{ mb: 2 }}>
+//                 Posts with images get 94% more views!
+//               </Alert>
+//               <Alert severity="success">
+//                 Optimal post length: 1,500-2,000 words
+//               </Alert>
+//             </Paper>
+//           </motion.div>
+//         </Box>
+//       </Box>
+      
+//       <Backdrop
+//         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+//         open={isSaving || isUploading}
+//       >
+//         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+//           <CircularProgress color="inherit" />
+//           <Typography variant="body1">
+//             {isUploading ? uploadStatus : 
+//              post.isDraft ? 'Saving your draft...' : 'Publishing your post...'}
+//           </Typography>
+//         </Box>
+//       </Backdrop>
+      
+//       <Snackbar
+//         open={notification.open}
+//         autoHideDuration={4000}
+//         onClose={handleCloseNotification}
+//         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+//       >
+//         <Alert 
+//           onClose={handleCloseNotification} 
+//           severity={notification.severity} 
+//           variant="filled"
+//           sx={{ width: '100%' }}
+//         >
+//           {notification.message}
+//         </Alert>
+//       </Snackbar>
+//     </Container>
+//   );
+// };
+
+// export default BlogCreation;
+
+
+//======================================================================
+
+
 import {
   DeleteOutline,
   Image as ImageIcon,
@@ -4982,11 +7518,15 @@ import {
 import axios from 'axios';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { categories } from '../Data/blogData';
-import BlogPreview from './Blog/BlogPreview';
+import BlogPreview from './BlogPreview';
 import Navbar from './Navbar';
 import EnhancedTiptapEditor from './TiptapEditor';
+
 const BlogCreation = () => {
+  const location = useLocation();
+  const blogData = location.state?.blogData;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [activeTab, setActiveTab] = useState(0);
@@ -4995,20 +7535,47 @@ const BlogCreation = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
+  const [isLoading, setIsLoading] = useState(true);
   const [post, setPost] = useState({
     title: '',
-    content: null, // Initialize as null for JSON content
+    content: null,
     category: '',
     tags: [],
     coverImage: '',
     isDraft: true,
-    author: {  // Add author field
+    author: {
       name: '',
       avatar: ''
     }
   });
 
-  // Animation variants
+  useEffect(() => {
+    if (blogData) {
+      try {
+        const parsedContent = typeof blogData.content === 'string' 
+          ? JSON.parse(blogData.content) 
+          : blogData.content;
+        
+        setPost({
+          title: blogData.title,
+          content: parsedContent,
+          category: blogData.category || '',
+          tags: blogData.tags || [],
+          coverImage: blogData.coverImageUrl || '',
+          isDraft: !blogData.isPublished,
+          author: {
+            name: blogData.fullName || blogData.username || '',
+            avatar: blogData.profileImageUrl || ''
+          }
+        });
+      } catch (error) {
+        console.error('Error parsing content:', error);
+        setPost(prev => ({ ...prev, content: null }));
+      }
+    }
+    setIsLoading(false);
+  }, [blogData]);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -5026,7 +7593,6 @@ const BlogCreation = () => {
   };
 
   const handleContentChange = (newContent) => {
-    // newContent is already a JSON object from Tiptap
     setPost((prev) => ({ ...prev, content: newContent }));
   };
 
@@ -5144,14 +7710,43 @@ const BlogCreation = () => {
 
   const createBlogPost = async (postData) => {
     try {
-      const response = await axios.post('https://localhost:7163/api/Post', postData, {
+      const userEmail = getUserEmail();
+      const isUpdate = !!blogData;
+      
+      const url = isUpdate 
+        ? `https://localhost:7163/api/Post/byemail/${blogData.id}`
+        : `https://localhost:7163/api/Post`;
+
+      const method = isUpdate ? 'put' : 'post';
+      
+      const payload = isUpdate
+        ? {
+            title: postData.title,
+            content: JSON.stringify(postData.content),
+            coverImageUrl: postData.coverImageUrl,
+            category: postData.category,
+            tags: postData.tags,
+            isPublished: postData.isPublished
+          }
+        : {
+            userEmail: userEmail,
+            title: postData.title,
+            content: JSON.stringify(postData.content),
+            coverImageUrl: postData.coverImageUrl,
+            category: postData.category,
+            tags: postData.tags,
+            isPublished: postData.isPublished
+          };
+
+      const response = await axios[method](url, payload, {
         headers: {
           'Content-Type': 'application/json',
         }
       });
+      
       return response.data;
     } catch (error) {
-      console.error('Error creating blog post:', error);
+      console.error('Error saving post:', error);
       throw error;
     }
   };
@@ -5185,12 +7780,9 @@ const BlogCreation = () => {
     setIsSaving(true);
     
     try {
-      const userEmail = getUserEmail();
-      
       const postData = {
-        userEmail: userEmail,
         title: post.title,
-        content: post.content, // This is already a JSON object
+        content: post.content,
         coverImageUrl: post.coverImage || null,
         category: post.category || null,
         tags: post.tags.length > 0 ? post.tags : null,
@@ -5202,8 +7794,12 @@ const BlogCreation = () => {
       setNotification({
         open: true,
         message: isPublished 
-          ? 'Post published successfully!' 
-          : 'Draft saved successfully!',
+          ? blogData 
+            ? 'Post updated and published successfully!' 
+            : 'Post published successfully!'
+          : blogData 
+            ? 'Draft updated successfully!' 
+            : 'Draft saved successfully!',
         severity: 'success'
       });
       
@@ -5245,12 +7841,10 @@ const BlogCreation = () => {
     setNotification(prev => ({ ...prev, open: false }));
   };
 
-  // Calculate word count from JSON content
   const calculateWordCount = (content) => {
     if (!content) return 0;
     
     let text = '';
-    // Recursive function to extract text from JSON content
     const extractText = (node) => {
       if (node.text) {
         text += node.text + ' ';
@@ -5270,7 +7864,6 @@ const BlogCreation = () => {
   const wordCount = calculateWordCount(post.content);
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
 
-  // Add useEffect to fetch user data
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -5291,8 +7884,11 @@ const BlogCreation = () => {
       }
     };
 
-    fetchUserData();
-  }, []);
+    if (!blogData) {
+      fetchUserData();
+    }
+  }, [blogData]);
+
   return (
     <Container maxWidth="xl" sx={{ py: 8 }}>
       <Navbar />
@@ -5325,10 +7921,10 @@ const BlogCreation = () => {
               transition={{ duration: 0.5 }}
             >
               <Typography variant="h3" gutterBottom fontWeight="bold">
-                Create Your Blog Post
+                {blogData ? 'Edit Your Blog Post' : 'Create Your Blog Post'}
               </Typography>
               <Typography variant="h6" sx={{ opacity: 0.9 }}>
-                Share your thoughts with the world
+                {blogData ? 'Update your existing post' : 'Share your thoughts with the world'}
               </Typography>
             </motion.div>
           </Box>
@@ -5355,7 +7951,7 @@ const BlogCreation = () => {
                 </Button>
               </Tooltip>
               
-              <Tooltip title="Publish your post">
+              <Tooltip title={blogData && blogData.isPublished ? "Update published post" : "Publish your post"}>
                 <Button 
                   variant="contained" 
                   color="secondary"
@@ -5364,7 +7960,7 @@ const BlogCreation = () => {
                   disabled={isSaving || isUploading}
                   sx={{ bgcolor: 'white', color: 'primary.main', '&:hover': { bgcolor: 'grey.100' } }}
                 >
-                  Publish
+                  {blogData && blogData.isPublished ? 'Update' : 'Publish'}
                 </Button>
               </Tooltip>
             </Box>
@@ -5447,10 +8043,13 @@ const BlogCreation = () => {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.25 }}
                   >
-                    <EnhancedTiptapEditor 
-                      content={post.content || undefined} // Pass undefined if null to use default empty content
-                      onChange={handleContentChange} 
-                    />
+                    {!isLoading && (
+                      <EnhancedTiptapEditor 
+                        key={blogData ? blogData.id : 'new'}
+                        content={post.content || undefined}
+                        onChange={handleContentChange} 
+                      />
+                    )}
                   </motion.div>
                 ) : (
                   <motion.div
@@ -5487,14 +8086,14 @@ const BlogCreation = () => {
                   {wordCount} words · {readTime} min read
                 </Typography>
                 <Typography variant="body2">
-                  {post.isDraft ? 'Draft' : 'Ready to publish'}
+                  {post.isDraft ? 'Draft' : blogData && blogData.isPublished ? 'Published' : 'Ready to publish'}
                 </Typography>
               </Box>
             </Paper>
           </motion.div>
         </Box>
 
-                 <Box
+        <Box
           component={motion.div}
           variants={containerVariants}
           initial="hidden"
@@ -5699,7 +8298,7 @@ const BlogCreation = () => {
                   onClick={handlePublish}
                   disabled={isSaving || isUploading}
                 >
-                  Publish
+                  {blogData && blogData.isPublished ? 'Update' : 'Publish'}
                 </Button>
               </Box>
             </Paper>
@@ -5720,8 +8319,6 @@ const BlogCreation = () => {
           </motion.div>
         </Box>
       </Box>
-      
-   
       
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
