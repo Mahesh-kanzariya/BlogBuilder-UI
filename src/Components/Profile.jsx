@@ -2129,10 +2129,753 @@
 
 //========================================================================
 
+// import ArrowBack from "@mui/icons-material/ArrowBack";
+// import ArticleIcon from "@mui/icons-material/Article";
+// import BarChartIcon from "@mui/icons-material/BarChart";
+// import BookmarkIcon from "@mui/icons-material/Bookmark";
+// import DateRangeIcon from "@mui/icons-material/DateRange";
+// import EditIcon from "@mui/icons-material/Edit";
+// import EmailIcon from "@mui/icons-material/Email";
+// import FavoriteIcon from "@mui/icons-material/Favorite";
+// import PersonIcon from "@mui/icons-material/Person";
+// import {
+//   Avatar,
+//   Box,
+//   Button,
+//   Card,
+//   CardContent,
+//   CircularProgress,
+//   Container,
+//   Dialog,
+//   DialogActions,
+//   DialogContent,
+//   DialogTitle,
+//   Divider,
+//   Grid,
+//   IconButton,
+//   List,
+//   ListItem,
+//   ListItemAvatar,
+//   ListItemText,
+//   Paper,
+//   styled,
+//   Tab,
+//   Tabs,
+//   TextField,
+//   Typography,
+//   useTheme,
+// } from "@mui/material";
+// import axios from "axios";
+// import React, { useEffect, useState } from "react";
+// import { useNavigate } from "react-router-dom";
+// import BlogView from "./BlogView";
+// import Navbar from "./Navbar";
+
+// const LogoutButton = styled(Button)(({ theme }) => ({
+//   background: `linear-gradient(90deg, ${theme.palette.secondary.main}, ${theme.palette.primary.light})`,
+//   color: theme.palette.common.white,
+//   transition: "all 0.3s ease",
+//   "&:hover": {
+//     background: `linear-gradient(90deg, ${theme.palette.secondary.dark}, ${theme.palette.primary.main})`,
+//     transform: "scale(1.05)",
+//   },
+// }));
+
+// const ProfilePage = () => {
+//   const theme = useTheme();
+//   const [currentTab, setCurrentTab] = useState(0);
+//   const navigate = useNavigate();
+//   const [loading, setLoading] = useState(true);
+//   const [userData, setUserData] = useState(null);
+//   const [error, setError] = useState(null);
+//   const [uploadStatus, setUploadStatus] = useState("");
+//   const [isImagePopupOpen, setIsImagePopupOpen] = useState(false);
+//   const [blogPosts, setBlogPosts] = useState([]);
+//   const [selectedBlog, setSelectedBlog] = useState(null);
+//   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+//   const [stats, setStats] = useState({
+//     posts: 0,
+//     followers: 0,
+//     following: 0,
+//     likes: 0,
+//   });
+
+//   const dummyLikedPosts = [
+//     {
+//       id: 101,
+//       title: "The Art of Data Science",
+//       date: "3 days ago",
+//       likes: 423,
+//       image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71",
+//     },
+//     {
+//       id: 102,
+//       title: "Travel Photography Tips",
+//       date: "1 week ago",
+//       likes: 321,
+//       image: "https://images.unsplash.com/photo-1500051638674-ff996a0ec29f",
+//     },
+//   ];
+
+//   const dummySavedPosts = [
+//     {
+//       id: 201,
+//       title: "Minimalist Living Guide",
+//       date: "5 days ago",
+//       likes: 287,
+//       image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e",
+//     },
+//     {
+//       id: 202,
+//       title: "Cooking with Local Ingredients",
+//       date: "2 weeks ago",
+//       likes: 194,
+//       image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061",
+//     },
+//   ];
+
+//   const [editOpen, setEditOpen] = useState(false);
+//   const [formData, setFormData] = useState({
+//     name: "",
+//     bio: "",
+//     avatar: "",
+//   });
+//   const [isUploading, setIsUploading] = useState(false);
+
+  
+//   const formatDate = (dateString) => {
+//     if (!dateString) return "Unknown";
+//     const date = new Date(dateString);
+//     const now = new Date();
+//     const diffTime = Math.abs(now - date);
+//     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+//     if (diffDays === 1) return "1 day ago";
+//     if (diffDays < 7) return `${diffDays} days ago`;
+//     if (diffDays < 30)
+//       return `${Math.floor(diffDays / 7)} week${
+//         Math.floor(diffDays / 7) > 1 ? "s" : ""
+//       } ago`;
+
+//     return date.toLocaleDateString("en-US", {
+//       month: "long",
+//       day: "numeric",
+//       year: "numeric",
+//     });
+//   };
+
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       try {
+//         setLoading(true);
+//         const userEmail = sessionStorage.getItem("userEmail");
+
+//         if (!userEmail) {
+//           navigate("/");
+//           return;
+//         }
+
+//         const userResponse = await axios.get(
+//           `https://localhost:7163/api/user/by-email?email=${encodeURIComponent(
+//             userEmail
+//           )}`
+//         );
+//         setUserData(userResponse.data);
+
+//         setFormData({
+//           name: userResponse.data.full_Name || userResponse.data.username || "",
+//           bio: userResponse.data.bio || "",
+//           avatar: userResponse.data.profile_Image_Url || "",
+//         });
+
+//         const postsResponse = await axios.get(
+//           `https://localhost:7163/api/Post/byemail?email=${encodeURIComponent(
+//             userEmail
+//           )}`
+//         );
+
+//         if (Array.isArray(postsResponse.data)) {
+//           setBlogPosts(postsResponse.data);
+//           setStats({
+//             posts: postsResponse.data.filter((post) => post.isPublished).length,
+//             followers: 0,
+//             following: 0,
+//             likes: 0,
+//           });
+//         } else if (postsResponse.data) {
+//           setBlogPosts([postsResponse.data]);
+//           setStats({
+//             posts: postsResponse.data.isPublished ? 1 : 0,
+//             followers: 0,
+//             following: 0,
+//             likes: 0,
+//           });
+//         }
+//       } catch (err) {
+//         console.error("Error fetching data:", err);
+//         setError("Failed to load data. Please try again later.");
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchData();
+//   }, [navigate]);
+
+//   const handleLogout = () => {
+//     sessionStorage.removeItem("userEmail");
+//     navigate("/");
+//   };
+
+//   const handleTabChange = (event, newValue) => {
+//     setCurrentTab(newValue);
+//   };
+
+//   const formatJoinDate = (dateString) => {
+//     if (!dateString) return "Unknown";
+//     const date = new Date(dateString);
+//     return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+//   };
+
+//   const getContentExcerpt = (contentString) => {
+//     try {
+//       if (!contentString) return "";
+//       const content = JSON.parse(contentString);
+//       let text = "";
+
+//       const extractText = (node) => {
+//         if (!node) return;
+
+//         if (node.type === "text" && node.text) {
+//           text += node.text + " ";
+//         }
+
+//         if (node.content && Array.isArray(node.content)) {
+//           node.content.forEach((child) => extractText(child));
+//         }
+//       };
+
+//       if (content && content.content) {
+//         content.content.forEach((node) => extractText(node));
+//       }
+
+//       return text.length > 100 ? text.substring(0, 100) + "..." : text;
+//     } catch (e) {
+//       console.error("Error parsing content:", e);
+//       return "";
+//     }
+//   };
+
+//   const uploadToCloudinary = async (file) => {
+//     try {
+//       setIsUploading(true);
+//       setUploadStatus("Uploading...");
+
+//       const formData = new FormData();
+//       formData.append("file", file);
+//       formData.append("upload_preset", "my_unsigned");
+
+//       const response = await axios.post(
+//         "https://api.cloudinary.com/v1_1/dblu8hz5g/image/upload",
+//         formData,
+//         {
+//           headers: {
+//             "Content-Type": "multipart/form-data",
+//           },
+//         }
+//       );
+
+//       if (response.data && response.data.secure_url) {
+//         setUploadStatus("Upload complete!");
+//         return response.data.secure_url;
+//       } else {
+//         throw new Error("Upload failed");
+//       }
+//     } catch (error) {
+//       console.error("Error uploading to Cloudinary:", error);
+//       setUploadStatus("Upload failed. Please try again.");
+//       return null;
+//     } finally {
+//       setIsUploading(false);
+//     }
+//   };
+
+//   const saveProfileChanges = async () => {
+//     try {
+//       setLoading(true);
+//       const userEmail = sessionStorage.getItem("userEmail");
+
+//       if (!userEmail) {
+//         navigate("/");
+//         return;
+//       }
+
+//       const updateData = {
+//         full_Name: formData.name,
+//         bio: formData.bio,
+//         profile_Image_Url: formData.avatar,
+//       };
+
+//       await axios.put(
+//         `https://localhost:7163/api/user/by-email/${encodeURIComponent(
+//           userEmail
+//         )}`,
+//         updateData
+//       );
+
+//       const response = await axios.get(
+//         `https://localhost:7163/api/user/by-email?email=${encodeURIComponent(
+//           userEmail
+//         )}`
+//       );
+//       setUserData(response.data);
+
+//       setEditOpen(false);
+//     } catch (err) {
+//       console.error("Error updating profile:", err);
+//       setError("Failed to update profile. Please try again later.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleViewBlog = (blog) => {
+//     setSelectedBlog(blog);
+//     setIsPreviewOpen(true);
+//   };
+
+//   const getPostsForCurrentTab = () => {
+//     switch (currentTab) {
+//       case 0:
+//         return blogPosts.filter((post) => post.isPublished);
+//       case 1:
+//         return dummyLikedPosts;
+//       case 2:
+//         return dummySavedPosts;
+//       case 3:
+//         return blogPosts.filter((post) => !post.isPublished);
+//       default:
+//         return [];
+//     }
+//   };
+
+//   if (loading) {
+//     return (
+//       <Container maxWidth="lg" sx={{ py: 8, textAlign: "center" }}>
+//         <Navbar />
+//         <Box sx={{ mt: 10 }}>
+//           <CircularProgress />
+//           <Typography variant="h6" sx={{ mt: 2 }}>
+//             Loading profile...
+//           </Typography>
+//         </Box>
+//       </Container>
+//     );
+//   }
+
+//   if (error) {
+//     return (
+//       <Container maxWidth="lg" sx={{ py: 8, textAlign: "center" }}>
+//         <Navbar />
+//         <Paper sx={{ p: 4, mt: 4, borderRadius: 2 }}>
+//           <Typography variant="h6" color="error">
+//             {error}
+//           </Typography>
+//           <Button
+//             variant="contained"
+//             sx={{ mt: 2 }}
+//             onClick={() => window.location.reload()}
+//           >
+//             Try Again
+//           </Button>
+//         </Paper>
+//       </Container>
+//     );
+//   }
+
+//   const currentPosts = getPostsForCurrentTab();
+
+//   return (
+//     <Container maxWidth="lg" sx={{ py: 8 }}>
+//       <Navbar />
+
+//       {/* Fullscreen Blog View Dialog */}
+//       <Dialog
+//   open={isPreviewOpen}
+//   onClose={() => setIsPreviewOpen(false)}
+//   fullScreen
+//   PaperProps={{ sx: { bgcolor: "background.default" } }}
+// >
+//   <Box sx={{ position: "relative" }}>
+//     <Button
+//       variant="contained"
+//       onClick={() => setIsPreviewOpen(false)}
+//       startIcon={<ArrowBack />}
+//       sx={{
+//         position: "fixed",
+//         top: theme.spacing(10),
+//         right: theme.spacing(0),
+//         zIndex: theme.zIndex.modal + 1,
+//         px: 4,
+//         boxShadow: 3,
+//         '&:hover': {
+//           boxShadow: 6,
+//         },
+//         [theme.breakpoints.down('sm')]: {
+//           top: theme.spacing(1),
+//           right: theme.spacing(1),
+//           px: 2,
+//           fontSize: '0.875rem'
+//         }
+//       }}
+//     >
+//       Back to Profile
+//     </Button>
+
+//     {selectedBlog && <BlogView blogData={selectedBlog} />}
+//   </Box>
+// </Dialog>
+
+//       {/* Profile Header */}
+//       <Paper
+//         elevation={0}
+//         sx={{
+//           p: 4,
+//           mb: 4,
+//           borderRadius: 4,
+//           background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
+//           color: "white",
+//           position: "relative",
+//         }}
+//       >
+//         <Box sx={{ position: "absolute", top: 20, right: 16 }}>
+//           <LogoutButton variant="outlined" onClick={handleLogout}>
+//             Logout
+//           </LogoutButton>
+//         </Box>
+
+//         <Grid container spacing={4} alignItems="center">
+//           <Grid item>
+//             {userData?.profile_Image_Url ? (
+//               <Avatar
+//                 src={userData.profile_Image_Url}
+//                 alt={userData?.username || "User"}
+//                 sx={{
+//                   width: 120,
+//                   height: 120,
+//                   border: "4px solid white",
+//                   boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
+//                   cursor: "pointer",
+//                 }}
+//                 onClick={() => setIsImagePopupOpen(true)}
+//               />
+//             ) : (
+//               <Avatar
+//                 sx={{
+//                   width: 120,
+//                   height: 120,
+//                   border: "4px solid white",
+//                   boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
+//                   bgcolor: theme.palette.primary.dark,
+//                   cursor: "pointer",
+//                 }}
+//                 onClick={() => setIsImagePopupOpen(true)}
+//               >
+//                 <PersonIcon sx={{ fontSize: 60 }} />
+//               </Avatar>
+//             )}
+//           </Grid>
+//           <Grid item xs={12} sm>
+//             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+//               <Typography variant="h4" fontWeight="bold">
+//                 {userData?.full_Name || userData?.username || "User"}
+//               </Typography>
+//               <IconButton
+//                 onClick={() => setEditOpen(true)}
+//                 sx={{
+//                   bgcolor: "rgba(255,255,255,0.1)",
+//                   "&:hover": { bgcolor: "rgba(255,255,255,0.2)" },
+//                 }}
+//               >
+//                 <EditIcon />
+//               </IconButton>
+//             </Box>
+//             <Typography variant="body1" sx={{ mb: 2, opacity: 0.9 }}>
+//               {userData?.bio || "No bio yet"}
+//             </Typography>
+//             <Box
+//               sx={{ display: "flex", gap: 3, color: "rgba(255,255,255,0.9)" }}
+//             >
+//               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+//                 <EmailIcon fontSize="small" />
+//                 <Typography variant="body2">{userData?.email}</Typography>
+//               </Box>
+//               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+//                 <DateRangeIcon fontSize="small" />
+//                 <Typography variant="body2">
+//                   Joined {formatJoinDate(userData?.created_At)}
+//                 </Typography>
+//               </Box>
+//             </Box>
+//           </Grid>
+//         </Grid>
+//       </Paper>
+
+//       {/* Image Popup */}
+//       <Dialog
+//         open={isImagePopupOpen}
+//         onClose={() => setIsImagePopupOpen(false)}
+//         maxWidth="sm"
+//         fullWidth
+//       >
+//         <DialogContent sx={{ textAlign: "center" }}>
+//           {userData?.profile_Image_Url ? (
+//             <img
+//               src={userData.profile_Image_Url}
+//               alt="Profile"
+//               style={{
+//                 maxWidth: "100%",
+//                 maxHeight: "80vh",
+//                 borderRadius: "8px",
+//               }}
+//             />
+//           ) : (
+//             <Typography variant="body1">No profile image available</Typography>
+//           )}
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setIsImagePopupOpen(false)}>Close</Button>
+//         </DialogActions>
+//       </Dialog>
+
+//       {/* Edit Profile Dialog */}
+//       <Dialog
+//         open={editOpen}
+//         onClose={() => setEditOpen(false)}
+//         fullWidth
+//         maxWidth="sm"
+//       >
+//         <DialogTitle>Edit Profile</DialogTitle>
+//         <DialogContent dividers>
+//           <Box
+//             component="form"
+//             sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+//           >
+//             <TextField
+//               label="Full Name"
+//               value={formData.name}
+//               onChange={(e) =>
+//                 setFormData({ ...formData, name: e.target.value })
+//               }
+//               fullWidth
+//             />
+//             <TextField
+//               label="Bio"
+//               multiline
+//               rows={3}
+//               value={formData.bio}
+//               onChange={(e) =>
+//                 setFormData({ ...formData, bio: e.target.value })
+//               }
+//               fullWidth
+//             />
+//             <Button
+//               variant="contained"
+//               component="label"
+//               disabled={isUploading}
+//             >
+//               {isUploading ? "Uploading..." : "Upload Profile Picture"}
+//               <input
+//                 type="file"
+//                 hidden
+//                 accept="image/*"
+//                 onChange={async (e) => {
+//                   const file = e.target.files[0];
+//                   if (file) {
+//                     const cloudinaryUrl = await uploadToCloudinary(file);
+//                     if (cloudinaryUrl) {
+//                       setFormData({ ...formData, avatar: cloudinaryUrl });
+//                     }
+//                   }
+//                 }}
+//               />
+//             </Button>
+//             {uploadStatus && (
+//               <Typography
+//                 variant="caption"
+//                 color={
+//                   uploadStatus === "Upload complete!"
+//                     ? "success.main"
+//                     : "info.main"
+//                 }
+//               >
+//                 {uploadStatus}
+//               </Typography>
+//             )}
+//             {formData.avatar ? (
+//               <Avatar
+//                 src={formData.avatar}
+//                 sx={{ width: 100, height: 100, mt: 2 }}
+//               />
+//             ) : (
+//               <Avatar
+//                 sx={{
+//                   width: 100,
+//                   height: 100,
+//                   mt: 2,
+//                   bgcolor: theme.palette.primary.dark,
+//                 }}
+//               >
+//                 <PersonIcon sx={{ fontSize: 50 }} />
+//               </Avatar>
+//             )}
+//           </Box>
+//         </DialogContent>
+//         <DialogActions>
+//           <Button onClick={() => setEditOpen(false)}>Cancel</Button>
+//           <Button
+//             onClick={saveProfileChanges}
+//             variant="contained"
+//             disabled={isUploading}
+//           >
+//             Save
+//           </Button>
+//         </DialogActions>
+//       </Dialog>
+
+//       {/* Statistics Cards */}
+//       <Grid container spacing={3} sx={{ mb: 4 }}>
+//         {[
+//           { icon: ArticleIcon, label: "Posts", value: stats.posts },
+//           { icon: FavoriteIcon, label: "Likes", value: stats.likes },
+//           { icon: BookmarkIcon, label: "Followers", value: stats.followers },
+//           { icon: BarChartIcon, label: "Following", value: stats.following },
+//         ].map((stat, index) => (
+//           <Grid item xs={6} sm={3} key={index}>
+//             <Card
+//               sx={{
+//                 height: "100%",
+//                 transition: "transform 0.2s",
+//                 "&:hover": {
+//                   transform: "translateY(-4px)",
+//                 },
+//               }}
+//             >
+//               <CardContent sx={{ textAlign: "center" }}>
+//                 <stat.icon color="primary" sx={{ fontSize: 40, mb: 1 }} />
+//                 <Typography variant="h4" fontWeight="bold" color="primary">
+//                   {stat.value.toLocaleString()}
+//                 </Typography>
+//                 <Typography variant="body2" color="text.secondary">
+//                   {stat.label}
+//                 </Typography>
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         ))}
+//       </Grid>
+
+//       {/* Content Tabs */}
+//       <Box sx={{ mb: 4 }}>
+//         <Tabs
+//           value={currentTab}
+//           onChange={handleTabChange}
+//           variant="fullWidth"
+//           sx={{
+//             mb: 3,
+//             "& .MuiTab-root": {
+//               minHeight: 64,
+//               fontSize: "1rem",
+//             },
+//           }}
+//         >
+//           <Tab label="Recent Posts" />
+//           <Tab label="Liked Posts" />
+//           <Tab label="Saved Posts" />
+//           <Tab label="Drafts" />
+//         </Tabs>
+
+//         {currentPosts.length > 0 ? (
+//         <List>
+//         {currentPosts.map((post) => (
+//           <React.Fragment key={post.id}>
+//             <ListItem
+//               sx={{
+//                 bgcolor: "background.paper",
+//                 borderRadius: 2,
+//                 mb: 2,
+//                 transition: "transform 0.2s",
+//                 "&:hover": {
+//                   transform: "translateX(8px)",
+//                 },
+//               }}
+//             >
+//               <ListItemAvatar>
+//                 <Avatar
+//                   variant="rounded"
+//                   src={currentTab === 0 || currentTab === 3 ? post.coverImageUrl : post.image}
+//                   sx={{ width: 80, height: 80, mr: 2 }}
+//                 />
+//               </ListItemAvatar>
+//               <ListItemText
+//                 primary={
+//                   <Typography variant="h6" gutterBottom>
+//                     {post.title}
+//                   </Typography>
+//                 }
+//                 secondary={
+//                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+//                     <Typography variant="body2" color="text.secondary">
+//                       {currentTab === 0 || currentTab === 3 
+//                         ? formatDate(post.createdAt) 
+//                         : formatDate(post.date)}
+//                     </Typography>
+//                     <Box
+//                       sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+//                     >
+//                       <FavoriteIcon fontSize="small" color="error" />
+//                       <Typography variant="body2" color="text.secondary">
+//                         {post.likes || 0}
+//                       </Typography>
+//                     </Box>
+//                   </Box>
+//                 }
+//               />
+//               <Button 
+//                 variant="outlined" 
+//                 size="small"
+//                 onClick={() => handleViewBlog(post)}
+//               >
+//                 View
+//               </Button>
+//             </ListItem>
+//             <Divider />
+//           </React.Fragment>
+//         ))}
+//       </List>
+//         ) : (
+//           <Box sx={{ textAlign: "center", py: 4 }}>
+//             <Typography variant="body1" color="text.secondary">
+//               No posts available
+//             </Typography>
+//           </Box>
+//         )}
+//       </Box>
+//     </Container>
+//   );
+// };
+
+// export default ProfilePage;
+
+
+//===================================================================
+
+
+import ArrowBack from "@mui/icons-material/ArrowBack";
 import ArticleIcon from "@mui/icons-material/Article";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
-import CloseIcon from "@mui/icons-material/Close";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 import EditIcon from "@mui/icons-material/Edit";
 import EmailIcon from "@mui/icons-material/Email";
@@ -2170,7 +2913,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BlogView from "./BlogView";
 import Navbar from "./Navbar";
-import ArrowBack from "@mui/icons-material/ArrowBack";
 
 const LogoutButton = styled(Button)(({ theme }) => ({
   background: `linear-gradient(90deg, ${theme.palette.secondary.main}, ${theme.palette.primary.light})`,
@@ -2194,6 +2936,7 @@ const ProfilePage = () => {
   const [blogPosts, setBlogPosts] = useState([]);
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [currentPosts, setCurrentPosts] = useState([]);
 
   const [stats, setStats] = useState({
     posts: 0,
@@ -2201,40 +2944,6 @@ const ProfilePage = () => {
     following: 0,
     likes: 0,
   });
-
-  const dummyLikedPosts = [
-    {
-      id: 101,
-      title: "The Art of Data Science",
-      date: "3 days ago",
-      likes: 423,
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71",
-    },
-    {
-      id: 102,
-      title: "Travel Photography Tips",
-      date: "1 week ago",
-      likes: 321,
-      image: "https://images.unsplash.com/photo-1500051638674-ff996a0ec29f",
-    },
-  ];
-
-  const dummySavedPosts = [
-    {
-      id: 201,
-      title: "Minimalist Living Guide",
-      date: "5 days ago",
-      likes: 287,
-      image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e",
-    },
-    {
-      id: 202,
-      title: "Cooking with Local Ingredients",
-      date: "2 weeks ago",
-      likes: 194,
-      image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061",
-    },
-  ];
 
   const [editOpen, setEditOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -2263,6 +2972,16 @@ const ProfilePage = () => {
       day: "numeric",
       year: "numeric",
     });
+  };
+
+  const fetchLikesCount = async (postId) => {
+    try {
+      const response = await axios.get(`https://localhost:7163/api/Likes/${postId}/count`);
+      return response.data.likes;
+    } catch (error) {
+      console.error(`Error fetching likes for post ${postId}:`, error);
+      return 0;
+    }
   };
 
   useEffect(() => {
@@ -2295,23 +3014,32 @@ const ProfilePage = () => {
           )}`
         );
 
+        let posts = [];
         if (Array.isArray(postsResponse.data)) {
-          setBlogPosts(postsResponse.data);
-          setStats({
-            posts: postsResponse.data.filter((post) => post.isPublished).length,
-            followers: 0,
-            following: 0,
-            likes: 0,
-          });
+          posts = postsResponse.data;
         } else if (postsResponse.data) {
-          setBlogPosts([postsResponse.data]);
-          setStats({
-            posts: postsResponse.data.isPublished ? 1 : 0,
-            followers: 0,
-            following: 0,
-            likes: 0,
-          });
+          posts = [postsResponse.data];
         }
+
+        // Fetch likes count for each post
+        const postsWithLikes = await Promise.all(
+          posts.map(async (post) => {
+            const likesCount = await fetchLikesCount(post.id);
+            return { ...post, likes: likesCount };
+          })
+        );
+
+        setBlogPosts(postsWithLikes);
+        
+        // Calculate total likes for stats
+        const totalLikes = postsWithLikes.reduce((sum, post) => sum + (post.likes || 0), 0);
+        
+        setStats({
+          posts: postsWithLikes.filter((post) => post.isPublished).length,
+          followers: 0,
+          following: 0,
+          likes: totalLikes,
+        });
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Failed to load data. Please try again later.");
@@ -2322,6 +3050,24 @@ const ProfilePage = () => {
 
     fetchData();
   }, [navigate]);
+
+  useEffect(() => {
+    const loadPosts = async () => {
+      if (currentTab === 0) {
+        // Recent posts (your actual posts)
+        const recentPosts = blogPosts.filter((post) => post.isPublished);
+        setCurrentPosts(recentPosts);
+      } else if (currentTab === 3) {
+        // Drafts
+        const draftPosts = blogPosts.filter((post) => !post.isPublished);
+        setCurrentPosts(draftPosts);
+      } else {
+        // For other tabs (liked and saved), keep empty for now
+        setCurrentPosts([]);
+      }
+    };
+    loadPosts();
+  }, [currentTab, blogPosts]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("userEmail");
@@ -2445,21 +3191,6 @@ const ProfilePage = () => {
     setIsPreviewOpen(true);
   };
 
-  const getPostsForCurrentTab = () => {
-    switch (currentTab) {
-      case 0:
-        return blogPosts.filter((post) => post.isPublished);
-      case 1:
-        return dummyLikedPosts;
-      case 2:
-        return dummySavedPosts;
-      case 3:
-        return blogPosts.filter((post) => !post.isPublished);
-      default:
-        return [];
-    }
-  };
-
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 8, textAlign: "center" }}>
@@ -2494,48 +3225,46 @@ const ProfilePage = () => {
     );
   }
 
-  const currentPosts = getPostsForCurrentTab();
-
   return (
     <Container maxWidth="lg" sx={{ py: 8 }}>
       <Navbar />
 
       {/* Fullscreen Blog View Dialog */}
       <Dialog
-  open={isPreviewOpen}
-  onClose={() => setIsPreviewOpen(false)}
-  fullScreen
-  PaperProps={{ sx: { bgcolor: "background.default" } }}
->
-  <Box sx={{ position: "relative" }}>
-    <Button
-      variant="contained"
-      onClick={() => setIsPreviewOpen(false)}
-      startIcon={<ArrowBack />}
-      sx={{
-        position: "fixed",
-        top: theme.spacing(10),
-        right: theme.spacing(0),
-        zIndex: theme.zIndex.modal + 1,
-        px: 4,
-        boxShadow: 3,
-        '&:hover': {
-          boxShadow: 6,
-        },
-        [theme.breakpoints.down('sm')]: {
-          top: theme.spacing(1),
-          right: theme.spacing(1),
-          px: 2,
-          fontSize: '0.875rem'
-        }
-      }}
-    >
-      Back to Profile
-    </Button>
+        open={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        fullScreen
+        PaperProps={{ sx: { bgcolor: "background.default" } }}
+      >
+        <Box sx={{ position: "relative" }}>
+          <Button
+            variant="contained"
+            onClick={() => setIsPreviewOpen(false)}
+            startIcon={<ArrowBack />}
+            sx={{
+              position: "fixed",
+              top: theme.spacing(10),
+              right: theme.spacing(0),
+              zIndex: theme.zIndex.modal + 1,
+              px: 4,
+              boxShadow: 3,
+              '&:hover': {
+                boxShadow: 6,
+              },
+              [theme.breakpoints.down('sm')]: {
+                top: theme.spacing(1),
+                right: theme.spacing(1),
+                px: 2,
+                fontSize: '0.875rem'
+              }
+            }}
+          >
+            Back to Profile
+          </Button>
 
-    {selectedBlog && <BlogView blogData={selectedBlog} />}
-  </Box>
-</Dialog>
+          {selectedBlog && <BlogView blogData={selectedBlog} />}
+        </Box>
+      </Dialog>
 
       {/* Profile Header */}
       <Paper
@@ -2797,63 +3526,61 @@ const ProfilePage = () => {
         </Tabs>
 
         {currentPosts.length > 0 ? (
-        <List>
-        {currentPosts.map((post) => (
-          <React.Fragment key={post.id}>
-            <ListItem
-              sx={{
-                bgcolor: "background.paper",
-                borderRadius: 2,
-                mb: 2,
-                transition: "transform 0.2s",
-                "&:hover": {
-                  transform: "translateX(8px)",
-                },
-              }}
-            >
-              <ListItemAvatar>
-                <Avatar
-                  variant="rounded"
-                  src={currentTab === 0 || currentTab === 3 ? post.coverImageUrl : post.image}
-                  sx={{ width: 80, height: 80, mr: 2 }}
-                />
-              </ListItemAvatar>
-              <ListItemText
-                primary={
-                  <Typography variant="h6" gutterBottom>
-                    {post.title}
-                  </Typography>
-                }
-                secondary={
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {currentTab === 0 || currentTab === 3 
-                        ? formatDate(post.createdAt) 
-                        : formatDate(post.date)}
-                    </Typography>
-                    <Box
-                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                    >
-                      <FavoriteIcon fontSize="small" color="error" />
-                      <Typography variant="body2" color="text.secondary">
-                        {post.likes || 0}
+          <List>
+            {currentPosts.map((post) => (
+              <React.Fragment key={post.id}>
+                <ListItem
+                  sx={{
+                    bgcolor: "background.paper",
+                    borderRadius: 2,
+                    mb: 2,
+                    transition: "transform 0.2s",
+                    "&:hover": {
+                      transform: "translateX(8px)",
+                    },
+                  }}
+                >
+                  <ListItemAvatar>
+                    <Avatar
+                      variant="rounded"
+                      src={post.coverImageUrl}
+                      sx={{ width: 80, height: 80, mr: 2 }}
+                    />
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
+                      <Typography variant="h6" gutterBottom>
+                        {post.title}
                       </Typography>
-                    </Box>
-                  </Box>
-                }
-              />
-              <Button 
-                variant="outlined" 
-                size="small"
-                onClick={() => handleViewBlog(post)}
-              >
-                View
-              </Button>
-            </ListItem>
-            <Divider />
-          </React.Fragment>
-        ))}
-      </List>
+                    }
+                    secondary={
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          {formatDate(post.createdAt)}
+                        </Typography>
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                        >
+                          <FavoriteIcon fontSize="small" color="error" />
+                          <Typography variant="body2" color="text.secondary">
+                            {post.likes || 0}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    }
+                  />
+                  <Button 
+                    variant="outlined" 
+                    size="small"
+                    onClick={() => handleViewBlog(post)}
+                  >
+                    View
+                  </Button>
+                </ListItem>
+                <Divider />
+              </React.Fragment>
+            ))}
+          </List>
         ) : (
           <Box sx={{ textAlign: "center", py: 4 }}>
             <Typography variant="body1" color="text.secondary">

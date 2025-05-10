@@ -1657,6 +1657,10 @@ function LoginPage() {
     navigate("/signup");
   };
 
+const handlePasswordReset = () => {
+    navigate("/password-reset-form");
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(true);
@@ -1925,6 +1929,7 @@ function LoginPage() {
 
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Link
+                onClick={handlePasswordReset}
                   href="#"
                   variant="body2"
                   sx={{

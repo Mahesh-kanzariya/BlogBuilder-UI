@@ -5,7 +5,9 @@ import ExplorePage from "../Components/Explore";
 import HomePage from "../Components/Home";
 import LoginPage from "../Components/Login";
 import BlogsPage from "../Components/MyBlogs";
+import PasswordResetForm from "../Components/PasswordResetForm";
 import ProfilePage from "../Components/Profile";
+import ResetPasswordComponent from "../Components/ResetPassword";
 import SignupPage from "../Components/Signup";
 import TermsOfService from "../Components/TermsOfService";
 
@@ -15,6 +17,8 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <LoginPage /> },
+      { path:"password-reset-form", element: <PasswordResetForm/> },
+      { path:"reset-password", element: <ResetPasswordComponent/> },
       { path:"signup", element: <SignupPage/> },
       { path:"terms-of-service", element: < TermsOfService/> },
       { path:"home", element: <HomePage /> },
