@@ -17,7 +17,6 @@ import {
   CardMedia,
   Chip,
   Container,
-  Fade,
   Grid,
   IconButton,
   Tooltip,
@@ -25,7 +24,8 @@ import {
   useMediaQuery,
   useTheme
 } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from './Footer';
 import Navbar from './Navbar';
@@ -35,8 +35,11 @@ const BlogBuilderHome = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [likedBlogs, setLikedBlogs] = useState({});
   const [savedBlogs, setSavedBlogs] = useState({});
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [statsVisible, setStatsVisible] = useState(false);
   const navigate = useNavigate();
+  const { scrollY } = useScroll();
+  const y = useTransform(scrollY, [0, 300], [0, 50]);
 
   const featuredBlogs = [
     {
@@ -81,6 +84,8 @@ const BlogBuilderHome = () => {
     { label: "Global Community", value: "180", suffix: " Countries" }
   ];
 
+  const categories = ['All', ...new Set(featuredBlogs.map(blog => blog.category))];
+
   useEffect(() => {
     const handleScroll = () => {
       const statsElement = document.getElementById('statistics');
@@ -102,210 +107,266 @@ const BlogBuilderHome = () => {
     setSavedBlogs(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const filteredBlogs = selectedCategory === 'All'
+    ? featuredBlogs
+    : featuredBlogs.filter(blog => blog.category === selectedCategory);
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default',mt:6 }}>
-      <Navbar/>
-      {/* Hero Section */}
-      <Box
-        sx={{
-          minHeight: '90vh',
-          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
-          color: 'white',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'url(https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            opacity: 0.2
-          }
-        }}
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', mt: 6 }}>
+      <Navbar />
+      {/* Hero Section with Parallax */}
+      <motion.div
+        style={{ y }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
       >
-        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-          <Grid container spacing={4} alignItems="center">
-            <Grid item xs={12} md={6}>
-              <Fade in timeout={1000}>
-                <Box>
-                  <Typography variant="h1" 
-                    sx={{ 
-                      fontWeight: 800, 
+        <Box
+          sx={{
+            minHeight: '90vh',
+            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            color: 'white',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'url(https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: 0.2,
+              transition: 'opacity 0.3s ease'
+            }
+          }}
+        >
+          <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+            <Grid container spacing={4} alignItems="center">
+              <Grid item xs={12} md={6}>
+                <motion.div
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                >
+                  <Typography
+                    variant="h1"
+                    sx={{
+                      fontWeight: 800,
                       mb: 2,
-                      fontSize: { xs: '2.5rem', md: '3.5rem' },
-                      textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
+                      fontSize: { xs: '2.5rem', md: '4rem' },
+                      textShadow: '2px 2px 8px rgba(0,0,0,0.3)'
                     }}
                   >
                     Share Your Story
                     <br />
                     Connect with the World
                   </Typography>
-                  <Typography variant="h5" sx={{ mb: 4, maxWidth: 600 }}>
+                  <Typography variant="h5" sx={{ mb: 4, maxWidth: 600, fontWeight: 300 }}>
                     Join our vibrant community of storytellers, thought leaders, and creative minds.
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                    <Button
-                      variant="contained"
-                      size="large"
-                      onClick={() => navigate('/create-blog')}
-                      startIcon={<CreateIcon />}
-                      sx={{
-                        bgcolor: 'white',
-                        color: 'primary.main',
-                        '&:hover': {
-                          bgcolor: 'rgba(255,255,255,0.9)',
-                          transform: 'translateY(-2px)'
-                        }
-                      }}
-                    >
-                      Start Writing
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="large"
-                      onClick={() => navigate('/explore')}
-                      startIcon={<ExploreIcon />}
-                      sx={{
-                        borderColor: 'white',
-                        color: 'white',
-                        '&:hover': {
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant="contained"
+                        size="large"
+                        onClick={() => navigate('/create-blog')}
+                        startIcon={<CreateIcon />}
+                        sx={{
+                          bgcolor: 'white',
+                          color: 'primary.main',
+                          px: 4,
+                          py: 1.5,
+                          borderRadius: 2,
+                          boxShadow: theme.shadows[4],
+                          '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' }
+                        }}
+                      >
+                        Start Writing
+                      </Button>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant="outlined"
+                        size="large"
+                        onClick={() => navigate('/explore')}
+                        startIcon={<ExploreIcon />}
+                        sx={{
                           borderColor: 'white',
-                          bgcolor: 'rgba(255,255,255,0.1)',
-                          transform: 'translateY(-2px)'
-                        }
-                      }}
-                    >
-                      Explore Stories
-                    </Button>
+                          color: 'white',
+                          px: 4,
+                          py: 1.5,
+                          borderRadius: 2,
+                          '&:hover': {
+                            borderColor: 'white',
+                            bgcolor: 'rgba(255,255,255,0.1)'
+                          }
+                        }}
+                      >
+                        Explore Stories
+                      </Button>
+                    </motion.div>
                   </Box>
-                </Box>
-              </Fade>
+                </motion.div>
+              </Grid>
             </Grid>
-          </Grid>
-        </Container>
-      </Box>
+          </Container>
+        </Box>
+      </motion.div>
 
-      {/* Featured Blogs Section */}
-      <Container sx={{ py: 8 }}>
-        <Typography 
-          variant="h3" 
-          sx={{ 
-            textAlign: 'center', 
-            mb: 6,
-            fontWeight: 700,
-            background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}
-        >
-          Trending Stories
-        </Typography>
-        <Grid container spacing={4}>
-          {featuredBlogs.map((blog) => (
-            <Grid item xs={12} sm={6} md={4} key={blog.id}>
-              <Card
+      {/* Category Filter Section */}
+      <Container sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', flexWrap: 'wrap', mb: 0 }}>
+          {categories.map(category => (
+            <motion.div
+              key={category}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Chip
+                label={category}
+                clickable
+                color={selectedCategory === category ? 'primary' : 'default'}
+                onClick={() => setSelectedCategory(category)}
                 sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: 3,
-                  overflow: 'hidden',
-                  boxShadow: theme.shadows[3],
-                  transition: 'all 0.3s ease',
+                  fontWeight: 500,
+                  px: 1,
                   '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: theme.shadows[8]
+                    bgcolor: selectedCategory === category ? theme.palette.primary.dark : theme.palette.grey[200]
                   }
                 }}
-              >
-                <CardActionArea>
-                  <CardMedia
-                    component="img"
-                    height="240"
-                    image={blog.image}
-                    alt={blog.title}
+              />
+            </motion.div>
+          ))}
+        </Box>
+      </Container>
+
+      {/* Featured Blogs Section */}
+      <Container sx={{ py: 4 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+        >
+          <Typography
+            variant="h3"
+            sx={{
+              textAlign: 'center',
+              mb: 6,
+              fontWeight: 700,
+              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}
+          >
+            Trending Stories
+          </Typography>
+          <Grid container spacing={4}>
+            {filteredBlogs.map((blog, index) => (
+              <Grid item xs={12} sm={6} md={4} key={blog.id}>
+                <motion.div
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <Card
                     sx={{
-                      transition: 'transform 0.3s ease',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                      boxShadow: theme.shadows[4],
+                      transition: 'all 0.3s ease',
                       '&:hover': {
-                        transform: 'scale(1.05)'
+                        transform: 'translateY(-8px)',
+                        boxShadow: theme.shadows[10]
                       }
                     }}
-                  />
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Chip 
-                      label={blog.category}
-                      size="small"
-                      sx={{ 
-                        mb: 2,
-                        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                        color: 'white'
-                      }}
-                    />
-                    <Typography gutterBottom variant="h6" component="h2" sx={{ fontWeight: 600 }}>
-                      {blog.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      {blog.description}
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        {blog.readTime} read
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {blog.likes} likes
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </CardActionArea>
-                <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Tooltip title="Like">
-                      <IconButton 
-                        onClick={() => toggleLike(blog.id)}
-                        sx={{ 
-                          color: likedBlogs[blog.id] ? 'error.main' : 'inherit',
-                          transition: 'transform 0.2s ease',
-                          '&:hover': { transform: 'scale(1.1)' }
-                        }}
-                      >
-                        {likedBlogs[blog.id] ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Save">
-                      <IconButton 
-                        onClick={() => toggleSave(blog.id)}
-                        sx={{ 
-                          color: savedBlogs[blog.id] ? 'primary.main' : 'inherit',
-                          transition: 'transform 0.2s ease',
-                          '&:hover': { transform: 'scale(1.1)' }
-                        }}
-                      >
-                        {savedBlogs[blog.id] ? <BookmarkIcon /> : <BookmarkBorderIcon />}
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Share">
-                      <IconButton 
-                        sx={{ 
-                          transition: 'transform 0.2s ease',
-                          '&:hover': { transform: 'scale(1.1)' }
-                        }}
-                      >
-                        <ShareIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+                  >
+                    <CardActionArea onClick={() => navigate(`/blog/${blog.id}`)}>
+                      <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.3 }}>
+                        <CardMedia
+                          component="img"
+                          height="240"
+                          image={blog.image}
+                          alt={blog.title}
+                        />
+                      </motion.div>
+                      <CardContent sx={{ flexGrow: 1 }}>
+                        <Chip
+                          label={blog.category}
+                          size="small"
+                          sx={{
+                            mb: 2,
+                            background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                            color: 'white'
+                          }}
+                        />
+                        <Typography gutterBottom variant="h6" component="h2" sx={{ fontWeight: 600 }}>
+                          {blog.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                          {blog.description}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {blog.readTime} read
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {blog.likes} likes
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </CardActionArea>
+                    <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Tooltip title="Like">
+                          <motion.div whileTap={{ scale: 0.8 }}>
+                            <IconButton
+                              onClick={() => toggleLike(blog.id)}
+                              sx={{
+                                color: likedBlogs[blog.id] ? 'error.main' : 'inherit'
+                              }}
+                            >
+                              {likedBlogs[blog.id] ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                            </IconButton>
+                          </motion.div>
+                        </Tooltip>
+                        <Tooltip title="Save">
+                          <motion.div whileTap={{ scale: 0.8 }}>
+                            <IconButton
+                              onClick={() => toggleSave(blog.id)}
+                              sx={{
+                                color: savedBlogs[blog.id] ? 'primary.main' : 'inherit'
+                              }}
+                            >
+                              {savedBlogs[blog.id] ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+                            </IconButton>
+                          </motion.div>
+                        </Tooltip>
+                        <Tooltip title="Share">
+                          <motion.div whileTap={{ scale: 0.8 }}>
+                            <IconButton>
+                              <ShareIcon />
+                            </IconButton>
+                          </motion.div>
+                        </Tooltip>
+                      </Box>
+                    </CardActions>
+                  </Card>
+                </motion.div>
+              </Grid>
+            ))}
+          </Grid>
+        </motion.div>
       </Container>
 
       {/* Statistics Section */}
@@ -328,51 +389,61 @@ const BlogBuilderHome = () => {
           }
         }}
       >
-        <Fade in={statsVisible} timeout={1000}>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: statsVisible ? 1 : 0 }}
+          transition={{ duration: 0.8 }}
+        >
           <Container sx={{ position: 'relative', zIndex: 1 }}>
             <Grid container spacing={4}>
-              {statistics.map((stat) => (
+              {statistics.map((stat, index) => (
                 <Grid item xs={6} md={3} key={stat.label}>
-                  <Box
-                    sx={{
-                      textAlign: 'center',
-                      p: 3,
-                      borderRadius: 4,
-                      bgcolor: 'background.paper',
-                      boxShadow: theme.shadows[3],
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      transition: 'transform 0.3s ease',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: theme.shadows[6]
-                      }
-                    }}
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: index * 0.2 }}
                   >
-                    <Typography 
-                      variant="h3" 
-                      sx={{ 
-                        fontWeight: 700,
-                        mb: 1,
-                        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
+                    <Box
+                      sx={{
+                        textAlign: 'center',
+                        p: 3,
+                        borderRadius: 4,
+                        bgcolor: 'background.paper',
+                        boxShadow: theme.shadows[4],
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: theme.shadows[8]
+                        }
                       }}
                     >
-                      {stat.value}{stat.suffix}
-                    </Typography>
-                    <Typography variant="subtitle1" color="text.secondary">
-                      {stat.label}
-                    </Typography>
-                  </Box>
+                      <Typography
+                        variant="h3"
+                        sx={{
+                          fontWeight: 700,
+                          mb: 1,
+                          background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                          backgroundClip: 'text',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent'
+                        }}
+                      >
+                        {stat.value}{stat.suffix}
+                      </Typography>
+                      <Typography variant="subtitle1" color="text.secondary">
+                        {stat.label}
+                      </Typography>
+                    </Box>
+                  </motion.div>
                 </Grid>
               ))}
             </Grid>
           </Container>
-        </Fade>
+        </motion.div>
       </Box>
 
       <Footer />
