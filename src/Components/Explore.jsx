@@ -1859,7 +1859,6 @@
 
 //==========================================================================
 
-
 import {
   ArrowBack,
   Bookmark,
@@ -1916,7 +1915,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import BlogView from './BlogView';
 import Navbar from './Navbar';
 
@@ -1955,6 +1954,7 @@ const ExplorePage = () => {
 
   // Comment system states
   const [comments, setComments] = useState({});
+  const [commentCounts, setCommentCounts] = useState({}); // New state for comment counts
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
@@ -1962,7 +1962,6 @@ const ExplorePage = () => {
   const [commentMenuAnchor, setCommentMenuAnchor] = useState(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
-  const [showComments, setShowComments] = useState({});
   const commentInputRef = useRef(null);
 
   // API axios instance
@@ -1982,11 +1981,15 @@ const ExplorePage = () => {
         const data = response.data;
         setAllPosts(data);
         processPostsForDisplay(data);
-        
-        data.forEach(post => {
-          fetchLikesCount(post.id);
-          checkIfUserLiked(post.id);
-        });
+
+        // Fetch likes and comments for all posts
+        await Promise.all(data.map(post => (
+          Promise.all([
+            fetchLikesCount(post.id),
+            checkIfUserLiked(post.id),
+            fetchComments(post.id)
+          ])
+        )));
       } catch (error) {
         console.error('Error fetching posts:', error);
       } finally {
@@ -2001,7 +2004,7 @@ const ExplorePage = () => {
   const processPostsForDisplay = (posts) => {
     if (!posts || posts.length === 0) return;
 
-    const sortedByDate = [...posts].sort((a, b) => 
+    const sortedByDate = [...posts].sort((a, b) =>
       new Date(b.publishedAt || b.createdAt) - new Date(a.publishedAt || a.createdAt)
     );
 
@@ -2035,8 +2038,8 @@ const ExplorePage = () => {
       }
 
       const query = searchQuery.toLowerCase();
-      const filtered = allPosts.filter(post => 
-        post.title.toLowerCase().includes(query) || 
+      const filtered = allPosts.filter(post =>
+        post.title.toLowerCase().includes(query) ||
         (post.category && post.category.toLowerCase().includes(query)) ||
         (post.tags && post.tags.some(tag => tag.toLowerCase().includes(query)))
       );
@@ -2097,7 +2100,7 @@ const ExplorePage = () => {
     try {
       const encodedEmail = encodeURIComponent(currentUser.email);
       const response = await api.get(`/api/Likes/${postId}/has-liked/${encodedEmail}`);
-      
+
       setLikedPosts(prev => {
         const newLiked = new Set(prev);
         if (response.data.liked) {
@@ -2107,7 +2110,7 @@ const ExplorePage = () => {
         }
         return newLiked;
       });
-      
+
       return response.data.liked;
     } catch (error) {
       console.error(`Error checking if user liked post ${postId}:`, error);
@@ -2117,7 +2120,7 @@ const ExplorePage = () => {
 
   const handleLikeToggle = async (postId) => {
     const wasLiked = likedPosts.has(postId);
-    
+
     setLikedPosts(prev => {
       const newLiked = new Set(prev);
       if (newLiked.has(postId)) {
@@ -2127,12 +2130,12 @@ const ExplorePage = () => {
       }
       return newLiked;
     });
-    
+
     setLikesCount(prev => ({
       ...prev,
       [postId]: (prev[postId] || 0) + (wasLiked ? -1 : 1)
     }));
-    
+
     try {
       if (wasLiked) {
         await api.delete('/api/Likes/unlike', {
@@ -2150,11 +2153,11 @@ const ExplorePage = () => {
           userEmail: currentUser.email
         });
       }
-      
+
       fetchLikesCount(postId);
     } catch (error) {
       console.error('Error toggling like:', error);
-      
+
       setLikedPosts(prev => {
         const newLiked = new Set(prev);
         if (wasLiked) {
@@ -2164,7 +2167,7 @@ const ExplorePage = () => {
         }
         return newLiked;
       });
-      
+
       setLikesCount(prev => ({
         ...prev,
         [postId]: prev[postId] + (wasLiked ? 1 : -1)
@@ -2186,7 +2189,7 @@ const ExplorePage = () => {
 
   const handlePostClick = async (postId) => {
     setBlogLoading(true);
-    
+
     const existingPost = allPosts.find(post => post.id === postId);
     if (existingPost) {
       setSelectedBlogForView(existingPost);
@@ -2194,7 +2197,7 @@ const ExplorePage = () => {
       setBlogLoading(false);
       return;
     }
-    
+
     try {
       const response = await api.get(`/api/Post/${postId}`);
       setSelectedBlogForView(response.data);
@@ -2214,12 +2217,25 @@ const ExplorePage = () => {
   const fetchComments = async (postId) => {
     try {
       const response = await api.get(`/api/comments/post/${postId}/nested`);
+      const postComments = response.data;
       setComments(prev => ({
         ...prev,
-        [postId]: response.data
+        [postId]: postComments
+      }));
+      // Calculate comment count including replies
+      const commentCount = postComments.reduce((count, comment) => {
+        return count + 1 + (comment.replies ? comment.replies.length : 0);
+      }, 0);
+      setCommentCounts(prev => ({
+        ...prev,
+        [postId]: commentCount
       }));
     } catch (error) {
       console.error(`Error fetching comments for post ${postId}:`, error);
+      setCommentCounts(prev => ({
+        ...prev,
+        [postId]: 0
+      }));
     }
   };
 
@@ -2234,18 +2250,12 @@ const ExplorePage = () => {
         parentId: replyingTo || null
       });
 
-      // Refresh comments
+      // Refresh comments and comment count
       await fetchComments(postId);
-      
+
       // Reset comment input
       setNewComment('');
       setReplyingTo(null);
-      
-      // Auto-show comments if they were hidden
-      setShowComments(prev => ({
-        ...prev,
-        [postId]: true
-      }));
     } catch (error) {
       console.error('Error adding comment:', error);
     }
@@ -2261,7 +2271,7 @@ const ExplorePage = () => {
         userEmail: currentUser.email
       });
 
-      // Refresh comments
+      // Refresh comments and comment count
       await fetchComments(postId);
       setEditingComment(null);
       setEditCommentContent('');
@@ -2272,32 +2282,20 @@ const ExplorePage = () => {
 
   const handleDeleteComment = async () => {
     if (!commentToDelete) return;
-  
+
     try {
       const encodedEmail = encodeURIComponent(currentUser.email);
       await api.delete(`/api/comments/${commentToDelete}?userEmail=${encodedEmail}`);
-      
-      // Refresh comments for the post
+
+      // Refresh comments and comment count for the post
       if (selectedBlogForView) {
         await fetchComments(selectedBlogForView.id);
       }
-      
+
       setOpenDeleteDialog(false);
       setCommentToDelete(null);
     } catch (error) {
       console.error('Error deleting comment:', error);
-    }
-  };
-
-  const toggleComments = (postId) => {
-    setShowComments(prev => ({
-      ...prev,
-      [postId]: !prev[postId]
-    }));
-
-    // Fetch comments if not already loaded
-    if (!comments[postId]) {
-      fetchComments(postId);
     }
   };
 
@@ -2349,26 +2347,25 @@ const ExplorePage = () => {
       setOpenDeleteDialog(true);
       handleMenuClose();
     };
-    
 
     const toggleReplies = () => {
       setShowReplies(!showReplies);
     };
 
     return (
-      <Box sx={{ 
-        mb: 2, 
+      <Box sx={{
+        mb: 2,
         pl: depth > 0 ? 4 : 0,
         borderLeft: depth > 0 ? `1px solid ${theme.palette.divider}` : 'none'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-          <Avatar 
-            src={comment.profileImageUrl || '/default-avatar.png'} 
+          <Avatar
+            src={comment.profileImageUrl || '/default-avatar.png'}
             sx={{ width: 32, height: 32, mr: 2 }}
           />
           <Box sx={{ flex: 1 }}>
-            <Box sx={{ 
-              backgroundColor: theme.palette.mode === 'dark' ? 
+            <Box sx={{
+              backgroundColor: theme.palette.mode === 'dark' ?
                 theme.palette.grey[800] : theme.palette.grey[100],
               borderRadius: '18px',
               p: 1.5,
@@ -2399,8 +2396,8 @@ const ExplorePage = () => {
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, ml: 1 }}>
-              <Button 
-                size="small" 
+              <Button
+                size="small"
                 startIcon={<Reply fontSize="small" />}
                 onClick={handleReplyClick}
                 sx={{ minWidth: 0, mr: 1 }}
@@ -2409,8 +2406,8 @@ const ExplorePage = () => {
               </Button>
 
               {comment.replies && comment.replies.length > 0 && (
-                <Button 
-                  size="small" 
+                <Button
+                  size="small"
                   onClick={toggleReplies}
                   sx={{ minWidth: 0 }}
                 >
@@ -2420,8 +2417,8 @@ const ExplorePage = () => {
 
               {comment.userEmail === currentUser.email && (
                 <>
-                  <IconButton 
-                    size="small" 
+                  <IconButton
+                    size="small"
                     onClick={handleMenuOpen}
                     sx={{ ml: 'auto' }}
                   >
@@ -2453,8 +2450,8 @@ const ExplorePage = () => {
 
             {isReplying && replyingTo === comment.id && (
               <Box sx={{ mt: 2, display: 'flex', alignItems: 'center' }}>
-                <Avatar 
-                  src={currentUser.profileImageUrl || '/default-avatar.png'} 
+                <Avatar
+                  src={currentUser.profileImageUrl || '/default-avatar.png'}
                   sx={{ width: 32, height: 32, mr: 2 }}
                 />
                 <TextField
@@ -2468,7 +2465,7 @@ const ExplorePage = () => {
                   inputRef={commentInputRef}
                   InputProps={{
                     endAdornment: (
-                      <IconButton 
+                      <IconButton
                         onClick={() => handleAddComment(postId)}
                         disabled={!newComment.trim()}
                       >
@@ -2482,15 +2479,15 @@ const ExplorePage = () => {
 
             {editingComment === comment.id && (
               <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                <Button 
-                  size="small" 
+                <Button
+                  size="small"
                   variant="outlined"
                   onClick={() => setEditingComment(null)}
                 >
                   Cancel
                 </Button>
-                <Button 
-                  size="small" 
+                <Button
+                  size="small"
                   variant="contained"
                   onClick={() => handleEditComment(postId, comment.id)}
                   disabled={!editCommentContent.trim()}
@@ -2505,10 +2502,10 @@ const ExplorePage = () => {
         {showReplies && comment.replies && comment.replies.length > 0 && (
           <Box sx={{ mt: 2 }}>
             {comment.replies.map(reply => (
-              <Comment 
-                key={reply.id} 
-                comment={reply} 
-                postId={postId} 
+              <Comment
+                key={reply.id}
+                comment={reply}
+                postId={postId}
                 depth={depth + 1}
               />
             ))}
@@ -2520,14 +2517,11 @@ const ExplorePage = () => {
 
   // Blog card component
   const BlogCard = ({ post, isFeatured = false }) => {
-    const postComments = comments[post.id] || [];
-    const postCommentCount = postComments.reduce((count, comment) => {
-      return count + 1 + (comment.replies ? comment.replies.length : 0);
-    }, 0);
+    const postCommentCount = commentCounts[post.id] || 0;
 
     return (
-      <Card 
-        sx={{ 
+      <Card
+        sx={{
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -2559,7 +2553,7 @@ const ExplorePage = () => {
           height={isFeatured ? "300" : "200"}
           image={post.coverImageUrl || "https://images.pexels.com/photos/326503/pexels-photo-326503.jpeg"}
           alt={post.title}
-          sx={{ 
+          sx={{
             objectFit: 'cover',
             filter: 'brightness(0.9)'
           }}
@@ -2567,7 +2561,7 @@ const ExplorePage = () => {
         />
         <CardContent sx={{ flex: 1, p: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-            <Chip 
+            <Chip
               label={post.category || "General"}
               color="primary"
               size="small"
@@ -2575,8 +2569,8 @@ const ExplorePage = () => {
             />
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Tooltip title={likedPosts.has(post.id) ? "Unlike" : "Like"}>
-                <Badge 
-                  badgeContent={likesCount[post.id] > 0 ? likesCount[post.id] : null} 
+                <Badge
+                  badgeContent={likesCount[post.id] > 0 ? likesCount[post.id] : null}
                   color="error"
                   overlap="circular"
                   anchorOrigin={{
@@ -2586,7 +2580,7 @@ const ExplorePage = () => {
                   onClick={(e) => likesCount[post.id] > 0 && handleShowLikeUsers(post.id, e)}
                   sx={{ cursor: likesCount[post.id] > 0 ? 'pointer' : 'default' }}
                 >
-                  <IconButton 
+                  <IconButton
                     size="small"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -2599,9 +2593,9 @@ const ExplorePage = () => {
                 </Badge>
               </Tooltip>
 
-              <Tooltip title={showComments[post.id] ? "Hide comments" : "Show comments"}>
-                <Badge 
-                  badgeContent={postCommentCount > 0 ? postCommentCount : null} 
+              <Tooltip title="View comments">
+                <Badge
+                  badgeContent={postCommentCount > 0 ? postCommentCount : null}
                   color="primary"
                   overlap="circular"
                   anchorOrigin={{
@@ -2609,11 +2603,11 @@ const ExplorePage = () => {
                     horizontal: 'right',
                   }}
                 >
-                  <IconButton 
+                  <IconButton
                     size="small"
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleComments(post.id);
+                      handlePostClick(post.id);
                     }}
                   >
                     <ChatBubbleOutline />
@@ -2621,7 +2615,7 @@ const ExplorePage = () => {
                 </Badge>
               </Tooltip>
 
-              <IconButton 
+              <IconButton
                 size="small"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -2634,10 +2628,10 @@ const ExplorePage = () => {
             </Box>
           </Box>
 
-          <Typography 
-            variant={isFeatured ? "h5" : "h6"} 
-            gutterBottom 
-            sx={{ 
+          <Typography
+            variant={isFeatured ? "h5" : "h6"}
+            gutterBottom
+            sx={{
               fontWeight: 'bold',
               lineHeight: 1.3,
               minHeight: isFeatured ? '4rem' : '3.6rem',
@@ -2651,11 +2645,11 @@ const ExplorePage = () => {
             {post.title}
           </Typography>
 
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
+          <Typography
+            variant="body2"
+            color="text.secondary"
             paragraph
-            sx={{ 
+            sx={{
               display: '-webkit-box',
               WebkitLineClamp: 3,
               WebkitBoxOrient: 'vertical',
@@ -2697,67 +2691,6 @@ const ExplorePage = () => {
               </Box>
             </Box>
           </Box>
-
-          {/* Comments section */}
-          {showComments[post.id] && (
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
-                Comments ({postCommentCount})
-              </Typography>
-
-              {/* Comment list */}
-              <Box sx={{ maxHeight: 300, overflowY: 'auto', mb: 2 }}>
-                {postComments.length > 0 ? (
-                  postComments.map(comment => (
-                    <Comment key={comment.id} comment={comment} postId={post.id} />
-                  ))
-                ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                    No comments yet
-                  </Typography>
-                )}
-              </Box>
-
-              {/* Add comment */}
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                <Avatar 
-                  src={currentUser.profileImageUrl || '/default-avatar.png'} 
-                  sx={{ width: 40, height: 40, mr: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                  placeholder={replyingTo ? "Write a reply..." : "Add a comment..."}
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyPress={(e) => handleCommentKeyPress(e, post.id)}
-                  inputRef={commentInputRef}
-                  InputProps={{
-                    endAdornment: (
-                      <IconButton 
-                        onClick={() => handleAddComment(post.id)}
-                        disabled={!newComment.trim()}
-                      >
-                        <Send />
-                      </IconButton>
-                    ),
-                  }}
-                />
-              </Box>
-
-              {replyingTo && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>
-                    Replying to {postComments.find(c => c.id === replyingTo)?.username}
-                  </Typography>
-                  <IconButton size="small" onClick={() => setReplyingTo(null)}>
-                    <Close fontSize="small" />
-                  </IconButton>
-                </Box>
-              )}
-            </Box>
-          )}
         </CardContent>
       </Card>
     );
@@ -2766,17 +2699,15 @@ const ExplorePage = () => {
   // Blog view with comments
   if (selectedBlogForView) {
     const postComments = comments[selectedBlogForView.id] || [];
-    const postCommentCount = postComments.reduce((count, comment) => {
-      return count + 1 + (comment.replies ? comment.replies.length : 0);
-    }, 0);
+    const postCommentCount = commentCounts[selectedBlogForView.id] || 0;
 
     return (
       <Box>
-        <Button 
-          variant="contained" 
+        <Button
+          variant="contained"
           onClick={handleBackToExplore}
           startIcon={<ArrowBack />}
-          sx={{ 
+          sx={{
             position: 'fixed',
             top: theme.spacing(10),
             right: theme.spacing(0),
@@ -2798,7 +2729,7 @@ const ExplorePage = () => {
         </Button>
         <Box sx={{ mt: { xs: 6, sm: 8 } }}>
           <BlogView blogData={selectedBlogForView} />
-          
+
           {/* Comments section for blog view */}
           <Container maxWidth="md" sx={{ py: 4 }}>
             <Paper elevation={0} sx={{ p: 3, borderRadius: 2 }}>
@@ -2821,8 +2752,8 @@ const ExplorePage = () => {
 
               {/* Add comment */}
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar 
-                  src={currentUser.profileImageUrl || '/default-avatar.png'} 
+                <Avatar
+                  src={currentUser.profileImageUrl || '/default-avatar.png'}
                   sx={{ width: 48, height: 48, mr: 2 }}
                 />
                 <TextField
@@ -2838,7 +2769,7 @@ const ExplorePage = () => {
                   maxRows={4}
                   InputProps={{
                     endAdornment: (
-                      <IconButton 
+                      <IconButton
                         onClick={() => handleAddComment(selectedBlogForView.id)}
                         disabled={!newComment.trim()}
                         sx={{ alignSelf: 'flex-end' }}
@@ -2862,32 +2793,32 @@ const ExplorePage = () => {
               )}
             </Paper>
           </Container>
+          
         </Box>
-
         {/* Delete comment dialog */}
-        <Dialog
-          open={openDeleteDialog}
-          onClose={() => setOpenDeleteDialog(false)}
-          maxWidth="xs"
-          fullWidth
-        >
-          <DialogTitle>Delete Comment</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Are you sure you want to delete this comment? This action cannot be undone.
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
-            <Button 
-              onClick={handleDeleteComment}
-              color="error"
-              variant="contained"
-            >
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
+      <Dialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Delete Comment</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this comment? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
+          <Button
+            onClick={handleDeleteComment}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
       </Box>
     );
   }
@@ -2895,9 +2826,9 @@ const ExplorePage = () => {
   // Main explore page
   return (
     <Container maxWidth="xl" sx={{ py: 8 }}>
-      <Navbar/>
+      <Navbar />
       {/* Header Section */}
-      <Paper 
+      <Paper
         elevation={0}
         sx={{
           p: 3,
@@ -2920,7 +2851,6 @@ const ExplorePage = () => {
             zIndex: 1
           }}
         />
-        
         <Box sx={{ position: 'relative', zIndex: 2 }}>
           <Typography variant={isMobile ? "h5" : "h4"} component="h1" gutterBottom fontWeight="bold">
             Explore Amazing Content
@@ -2928,7 +2858,6 @@ const ExplorePage = () => {
           <Typography variant="subtitle1" sx={{ mb: 3, opacity: 0.9 }}>
             Discover trending topics and insights from our community
           </Typography>
-          
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <Paper
               sx={{
@@ -2969,8 +2898,8 @@ const ExplorePage = () => {
             {Array.from(
               new Map(
                 allPosts.map(post => [
-                  post.profileImageUrl || '', // key
-                  post,                       // value
+                  post.profileImageUrl || '',
+                  post,
                 ])
               ).values()
             )
@@ -2991,8 +2920,8 @@ const ExplorePage = () => {
 
       {/* Content Tabs */}
       <Box sx={{ mb: 4 }}>
-        <Tabs 
-          value={currentTab} 
+        <Tabs
+          value={currentTab}
           onChange={handleTabChange}
           variant="scrollable"
           scrollButtons="auto"
@@ -3011,7 +2940,7 @@ const ExplorePage = () => {
 
         {isLoading ? (
           <Grid container spacing={3}>
-                        {[...Array(6)].map((_, index) => (
+            {[...Array(6)].map((_, index) => (
               <Grid item xs={12} sm={6} md={4} key={index}>
                 <Card>
                   <Skeleton variant="rectangular" height={200} />
@@ -3131,6 +3060,7 @@ const ExplorePage = () => {
           )}
         </DialogContent>
       </Dialog>
+
     </Container>
   );
 };
